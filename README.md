@@ -1,13 +1,12 @@
 # YTS Scraper
 ---
-Download .torrent files from YTS.
 
 ## Installation
 ```python setup.py install```
 
 ## Description
 **yts-scraper** is a command-line tool for downloading .torrent files from YTS. 
-It requires Python 3.0+
+It requires Python 3.0+.
 Note that this tool does not download the contents of a torrent file but downloads files with .torrent extension.
 You should use a Torrent client to open these files. 
 
