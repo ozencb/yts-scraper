@@ -5,25 +5,27 @@ import os
 import sys
 import math
 import string
+import time
 
 def download_torrent(bin_content, movie_name, type, directory, rating, genre, categorize):
     if categorize == "rating":
-        os.makedirs((directory + "/" + str(math.ceil(rating))), exist_ok=True)
-        directory += ("/" + str(math.ceil(rating)))
+        os.makedirs((directory + "/" + str(math.ceil(rating))) + "+", exist_ok=True)
+        directory += ("/" + str(math.ceil(rating)) + "+")
     elif categorize == "genre":
         os.makedirs((directory + "/" + str(genre)), exist_ok=True)
         directory += ("/" + str(genre))
     elif categorize == "rating-genre":
-        os.makedirs((directory + "/" + str(math.ceil(rating)) + "/" + genre), exist_ok=True)
-        directory += ("/" + str(math.ceil(rating)) + "/" + genre)
+        os.makedirs((directory + "/" + str(math.ceil(rating)) + "+/" + genre), exist_ok=True)
+        directory += ("/" + str(math.ceil(rating)) + "+/" + genre)
     elif categorize == "genre-rating":
-        os.makedirs((directory + "/" + str(genre) + "/" + str(math.ceil(rating))), exist_ok=True)
-        directory += ("/" + str(genre) + "/" + str(math.ceil(rating)))
+        os.makedirs((directory + "/" + str(genre) + "/" + str(math.ceil(rating))) + "+", exist_ok=True)
+        directory += ("/" + str(genre) + "/" + str(math.ceil(rating)) + "+")
     
     path = os.path.join(directory, movie_name + " " + type + ".torrent")
 
     if os.path.isfile(path):
         print (movie_name + ": File already exists. Skipping.")
+        return
     else:
         print("Downloading " + movie_name + " " + type)
     
@@ -75,9 +77,12 @@ def main():
     if directory_arg:
         os.makedirs(str(directory_arg), exist_ok=True)
         directory = str(os.path.curdir) + "/" + str(directory_arg)
-    elif not directory_arg:
+    elif not directory_arg and not categorize:
         os.makedirs('Torrents', exist_ok=True)
         directory = os.path.curdir + "/Torrents"
+    elif not directory_arg and categorize:
+        os.makedirs(str(categorize).title(), exist_ok=True)
+        directory = os.path.curdir + "/" + str(categorize)
     
     if not quality in quality_options and quality:
         print('You entered an invalid quality option. Type "--help" to see a list of valid options.\nExiting...')
@@ -115,9 +120,17 @@ def main():
     url = "https://yts." + domain + "/api/v2/list_movies.json?" + "quality=" + quality + "&genre=" + genre + "&minimum_rating=" + minimum_rating + "&sort_by=" + sort_by + "&order_by=asc" + "&limit=" + str(limit) + "&page="
     url_response = requests.get(url)
     page_data = json.loads(url_response.content)
+    
+    if page_data.get("status") != "ok" or not page_data:
+        print("Could not get a response.\nExiting...")
+        exit(0)
+
     page_count = math.ceil(page_data["data"]["movie_count"]/limit)
     count = 0
     movie_count = 0
+
+    print("Query was successful.\n")
+    print("Found " + str(page_count * limit) + " movies. Download starting...\n")
 
     for page in range(1, page_count):
         count += 1
@@ -148,6 +161,8 @@ def main():
             else:
                 for torrent in torrents:
                     filter_torrents(quality, torrent, title_long, directory, movie_rating, None, categorize)
+    
+    print("Download finished.")
 
 if __name__ == "__main__":
     try:

@@ -1,6 +1,6 @@
 # YTS Scraper
-Download .torrent files from YTS.
 ---
+Download .torrent files from YTS.
 
 ## Installation
 ```python setup.py install```
