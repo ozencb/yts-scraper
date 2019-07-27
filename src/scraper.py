@@ -9,17 +9,17 @@ import time
 
 def download_torrent(bin_content, movie_name, type, directory, rating, genre, categorize):
     if categorize == "rating":
-        os.makedirs((directory + "/" + str(math.ceil(rating))) + "+", exist_ok=True)
-        directory += ("/" + str(math.ceil(rating)) + "+")
+        os.makedirs((directory + "/" + str(math.trunc(rating))) + "+", exist_ok=True)
+        directory += ("/" + str(math.trunc(rating)) + "+")
     elif categorize == "genre":
         os.makedirs((directory + "/" + str(genre)), exist_ok=True)
         directory += ("/" + str(genre))
     elif categorize == "rating-genre":
-        os.makedirs((directory + "/" + str(math.ceil(rating)) + "+/" + genre), exist_ok=True)
-        directory += ("/" + str(math.ceil(rating)) + "+/" + genre)
+        os.makedirs((directory + "/" + str(math.trunc(rating)) + "+/" + genre), exist_ok=True)
+        directory += ("/" + str(math.trunc(rating)) + "+/" + genre)
     elif categorize == "genre-rating":
-        os.makedirs((directory + "/" + str(genre) + "/" + str(math.ceil(rating))) + "+", exist_ok=True)
-        directory += ("/" + str(genre) + "/" + str(math.ceil(rating)) + "+")
+        os.makedirs((directory + "/" + str(genre) + "/" + str(math.trunc(rating))) + "+", exist_ok=True)
+        directory += ("/" + str(genre) + "/" + str(math.trunc(rating)) + "+")
     
     path = os.path.join(directory, movie_name + " " + type + ".torrent")
 
@@ -125,15 +125,16 @@ def main():
         print("Could not get a response.\nExiting...")
         exit(0)
 
-    page_count = math.ceil(page_data["data"]["movie_count"]/limit)
-    count = 0
-    movie_count = 0
+    movie_count = page_data["data"]["movie_count"]
+    page_counter = math.trunc(movie_count / limit)
+    counter = 0
+    movie_counter = 0
 
     print("Query was successful.\n")
-    print("Found " + str(page_count * limit) + " movies. Download starting...\n")
+    print("Found " + str(movie_count) + " movies. Download starting...\n")
 
-    for page in range(1, page_count):
-        count += 1
+    for page in range(1, page_counter):
+        counter += 1
         api_url = url + str(page)
 
         response = requests.get(api_url).json()
@@ -145,7 +146,7 @@ def main():
             exit(0)
         
         for movie in movies:
-            movie_count += 1
+            movie_counter += 1
             title_long = movie.get('title_long').translate({ord(i):None for i in '/\:*?"<>|'})
             movie_rating = movie.get('rating')
             movie_genres = movie.get('genres')
