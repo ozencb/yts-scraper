@@ -74,7 +74,7 @@ def main():
     minimum_rating = args.rating
     sort_by = args.sort_by
     categorize = args.categorize_by
-    page_arg = int(args.page)
+    page_arg = args.page
     
     if not domain:
         print("Please enter YTS domain.\nExiting...")
@@ -132,7 +132,7 @@ def main():
         exit(0)
 
     if page_arg:
-        page_start = page_arg
+        page_start = int(page_arg)
     else:
         page_start = 1
     
