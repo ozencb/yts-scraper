@@ -21,6 +21,7 @@ You should use a Torrent client to open these files.
 |```-r``` or ```--rating```         |Minimum rating score. Enter an integer between 0 and 9.                                                              |
 |```-s``` or ```--sort-by```        |Available options are: "title", "year", "rating", "peers", "seeds", "download_count", "like_count", "date_added"     |
 |```-c``` or ```--categorize-by```  |Creates a folder structure. Available options are: "rating", "genre", "rating-genre", "genre-rating"                 |
+|```-p``` or ```--page```           |Can be used to skip ahead an amount of pages.                                                                        |
 
 ## Disclaimer
 This is a proof of concept tool built mainly to practice programming.

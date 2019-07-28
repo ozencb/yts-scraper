@@ -7,7 +7,7 @@ import math
 import string
 import time
 
-def download_torrent(bin_content, movie_name, type, directory, rating, genre, categorize):
+def download_torrent(bin_content, movie_name, type, directory, rating, genre, categorize): 
     if categorize == "rating":
         os.makedirs((directory + "/" + str(math.trunc(rating))) + "+", exist_ok=True)
         directory += ("/" + str(math.trunc(rating)) + "+")
@@ -24,7 +24,7 @@ def download_torrent(bin_content, movie_name, type, directory, rating, genre, ca
     path = os.path.join(directory, movie_name + " " + type + ".torrent")
 
     if os.path.isfile(path):
-        print (movie_name + ": File already exists. Skipping.")
+        print (movie_name + ": File already exists. Skipping...")
         return
     else:
         print("Downloading " + movie_name + " " + type)
@@ -33,6 +33,10 @@ def download_torrent(bin_content, movie_name, type, directory, rating, genre, ca
         f.write(bin_content)
 
 def filter_torrents(quality, torrent, title_long, directory, movie_rating, movie_genre, categorize):
+    if torrent == None:
+        print("Could not find any torrents for " + title_long + ". Skipping...\n")
+        return
+
     if quality == "all" or quality == "1080p":
         if torrent.get('quality') == "1080p":
             download_torrent((requests.get(torrent.get('url'))).content, title_long, torrent.get('quality'), directory, movie_rating, movie_genre, categorize)
@@ -59,6 +63,7 @@ def main():
     parser.add_argument("-r", "--rating", help="Minimum rating score. Integer between 0-10", dest='rating', required=False)
     parser.add_argument("-s", "--sort-by", help='Sorting options. Valid arguments are: "title", "year", "rating", "peers", "seeds", "download_count", "like_count", "date_added"', dest='sort_by', required=False)
     parser.add_argument("-c", "--categorize-by", help='Creates a folder structure. Valid arguments are: "rating", "genre", "rating-genre", "genre-rating"', dest='categorize_by', required=False)
+    parser.add_argument("-p", "--page", help="Enter an integer to skip ahead pages", dest='page', required=False)
 
     args=parser.parse_args()
     domain = args.domain
@@ -69,6 +74,7 @@ def main():
     minimum_rating = args.rating
     sort_by = args.sort_by
     categorize = args.categorize_by
+    page_arg = int(args.page)
     
     if not domain:
         print("Please enter YTS domain.\nExiting...")
@@ -125,15 +131,20 @@ def main():
         print("Could not get a response.\nExiting...")
         exit(0)
 
+    if page_arg:
+        page_start = page_arg
+    else:
+        page_start = 1
+    
     movie_count = page_data["data"]["movie_count"]
-    page_counter = math.trunc(movie_count / limit)
+    page_count = math.trunc(movie_count / limit)
     counter = 0
     movie_counter = 0
 
     print("Query was successful.\n")
     print("Found " + str(movie_count) + " movies. Download starting...\n")
 
-    for page in range(1, page_counter):
+    for page in range(page_start, page_count):
         counter += 1
         api_url = url + str(page)
 
@@ -142,18 +153,18 @@ def main():
         movies = data.get("movies")
 
         if not movies:
-            print("Could not find any movies on this page")
-            exit(0)
+            print("Could not find any movies on this page.\n")     
         
         for movie in movies:
+            if not movie:
+                print("Could not find the movie. Skipping...\n")
+                continue
+            
             movie_counter += 1
             title_long = movie.get('title_long').translate({ord(i):None for i in '/\:*?"<>|'})
             movie_rating = movie.get('rating')
             movie_genres = movie.get('genres')
             torrents = movie.get('torrents')
-
-            if not torrents:
-                print('Could not find any torrents for this movie')
 
             if categorize and categorize != "rating":
                 for movie_genre in movie_genres:
