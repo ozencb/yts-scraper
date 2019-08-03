@@ -7,6 +7,7 @@ import math
 import string
 import time
 
+
 def download_torrent(bin_content, movie_name, type, directory, rating, genre, categorize): 
     if categorize == "rating":
         os.makedirs((directory + "/" + str(math.trunc(rating))) + "+", exist_ok=True)
@@ -32,6 +33,7 @@ def download_torrent(bin_content, movie_name, type, directory, rating, genre, ca
     with open(path, 'wb') as f:
         f.write(bin_content)
 
+
 def filter_torrents(quality, torrent, title_long, directory, movie_rating, movie_genre, categorize):
     if torrent == None:
         print("Could not find any torrents for " + title_long + ". Skipping...\n")
@@ -47,14 +49,8 @@ def filter_torrents(quality, torrent, title_long, directory, movie_rating, movie
         if torrent['quality'] == "3D":
             download_torrent((requests.get(torrent['url'])).content, title_long, torrent['quality'], directory, movie_rating, movie_genre, categorize)
 
-def main():
-    quality_options=["all", "720p", "1080p", "3d"]
-    genre_options=["all", "action", "adventure", "animation", "biography", "comedy", "crime", "documentary", "drama", "family", "fantasy", "film-noir", "game-show", "history", "horror", "music", "musical", "mystery", "news", "reality-tv", "romance", "sci-fi", "sport", "talk-show", "thriller", "war", "western"]
-    rating_options=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-    sortby_options=["title", "year", "rating", "latest", "peers", "seeds", "download_count", "like_count", "date_added"]
-    category_options=["none", "rating", "genre", "genre-rating", "rating-genre"]
-    
 
+def main(): 
     desc = "A command-line tool to for downloading .torrent files from YTS"
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument("-d", "--domain", help='Enter a YTS domain like "am" or "lt".', dest='domain', required=True)
@@ -66,7 +62,14 @@ def main():
     parser.add_argument("-c", "--categorize-by", help='Creates a folder structure. Valid arguments are: "rating", "genre", "rating-genre", "genre-rating"', dest='categorize_by', required=False)
     parser.add_argument("-p", "--page", help='Enter an integer to skip ahead pages', dest='page', required=False)
 
-
+    
+    quality_options=["all", "720p", "1080p", "3d"]
+    genre_options=["all", "action", "adventure", "animation", "biography", "comedy", "crime", "documentary", "drama", "family", "fantasy", "film-noir", "game-show", "history", "horror", "music", "musical", "mystery", "news", "reality-tv", "romance", "sci-fi", "sport", "talk-show", "thriller", "war", "western"]
+    rating_options=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+    sortby_options=["title", "year", "rating", "latest", "peers", "seeds", "download_count", "like_count", "date_added"]
+    category_options=["none", "rating", "genre", "genre-rating", "rating-genre"]
+    
+    
     args=parser.parse_args()
     domain = args.domain
     directory_arg = args.output
@@ -78,12 +81,14 @@ def main():
     categorize = args.categorize_by
     page_arg = args.page
     order = "asc"
+    limit = 50
 
-
+    
     if not domain:
         print("Please enter YTS domain.\nExiting...")
         exit(0)
 
+    
     if directory_arg:
         os.makedirs(str(directory_arg), exist_ok=True)
         directory = str(os.path.curdir) + "/" + str(directory_arg)
@@ -94,6 +99,7 @@ def main():
         os.makedirs(str(categorize).title(), exist_ok=True)
         directory = os.path.curdir + "/" + str(categorize)
     
+    
     if not quality in quality_options and quality:
         print('You entered an invalid quality option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
@@ -101,6 +107,7 @@ def main():
         print('You did not enter a quality option. Downloading all available qualities.')
         quality = "all"
 
+    
     if not genre in genre_options and genre:
         print('You entered an invalid genre option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
@@ -108,6 +115,7 @@ def main():
         print('You did not enter a genre option. Downloading all available genres.')
         genre = "all"
 
+    
     if not minimum_rating in rating_options and minimum_rating:
         print('You entered an invalid rating option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
@@ -115,6 +123,7 @@ def main():
         print('You did not enter a rating option. Downloading all available ratings.')
         minimum_rating = "1"
 
+    
     if not sort_by in sortby_options and sort_by:
         print('You entered an invalid sort option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
@@ -125,15 +134,18 @@ def main():
         sort_by = "date_added"
         order = "desc"
 
+    
     if not categorize in category_options and categorize:
         print('You entered an invalid categorizing option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
 
+    
     if not page_arg:
         print('You did not enter a page number. Starting from page 1.')
         page_arg = 1
 
-    limit = 50
+    
+
     concat_url = "https://yts." + domain + "/api/v2/list_movies.json?" + "quality=" + quality + "&genre=" + genre + "&minimum_rating=" + minimum_rating + "&sort_by=" + sort_by + "&order_by=" + order + "&limit=" + str(limit) + "&page="
     data = requests.get(concat_url).json()
     
@@ -150,6 +162,7 @@ def main():
     print("Query was successful.\n")
     print("Found " + str(movie_count) + " movies. Download starting...\n")
 
+    
     for page in range(page_start, page_count):
         counter += 1
         api_url = concat_url + str(page)
@@ -180,6 +193,7 @@ def main():
                     filter_torrents(quality, torrent, title_long, directory, movie_rating, None, categorize)
     
     print("Download finished.")
+
 
 if __name__ == "__main__":
     try:
