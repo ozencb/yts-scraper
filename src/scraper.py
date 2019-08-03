@@ -51,19 +51,21 @@ def main():
     quality_options=["all", "720p", "1080p", "3d"]
     genre_options=["all", "action", "adventure", "animation", "biography", "comedy", "crime", "documentary", "drama", "family", "fantasy", "film-noir", "game-show", "history", "horror", "music", "musical", "mystery", "news", "reality-tv", "romance", "sci-fi", "sport", "talk-show", "thriller", "war", "western"]
     rating_options=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-    sortby_options=["title", "year", "rating", "peers", "seeds", "download_count", "like_count", "date_added"]
+    sortby_options=["title", "year", "rating", "latest", "peers", "seeds", "download_count", "like_count", "date_added"]
     category_options=["none", "rating", "genre", "genre-rating", "rating-genre"]
     
+
     desc = "A command-line tool to for downloading .torrent files from YTS"
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument("-d", "--domain", help='Enter a YTS domain like "am" or "lt".', dest='domain', required=True)
     parser.add_argument("-o", "--output", help="Output Directory", dest='output', required=False)
     parser.add_argument("-q", "--quality", help='Movie Quality. Valid arguments are: "all", "720p", "1080p", "3d"', dest='quality', required=False)
     parser.add_argument("-g", "--genre", help='Movie Genre. Valid arguments are: "all", "action", "adventure", "animation", "biography", "comedy", "crime", "documentary", "drama", "family", "fantasy", "film-noir", "game-show", "history", "horror", "music", "musical", "mystery", "news", "reality-tv", "romance", "sci-fi", "sport", "talk-show", "thriller", "war", "western"', dest='genre', required=False)
-    parser.add_argument("-r", "--rating", help="Minimum rating score. Integer between 0-10", dest='rating', required=False)
-    parser.add_argument("-s", "--sort-by", help='Sorting options. Valid arguments are: "title", "year", "rating", "peers", "seeds", "download_count", "like_count", "date_added"', dest='sort_by', required=False)
+    parser.add_argument("-r", "--rating", help='Minimum rating score. Integer between 0-10', dest='rating', required=False)
+    parser.add_argument("-s", "--sort-by", help='Sorting options. Valid arguments are: "title", "year", "rating", "latest", "peers", "seeds", "download_count", "like_count", "date_added"', dest='sort_by', required=False)
     parser.add_argument("-c", "--categorize-by", help='Creates a folder structure. Valid arguments are: "rating", "genre", "rating-genre", "genre-rating"', dest='categorize_by', required=False)
-    parser.add_argument("-p", "--page", help="Enter an integer to skip ahead pages", dest='page', required=False)
+    parser.add_argument("-p", "--page", help='Enter an integer to skip ahead pages', dest='page', required=False)
+
 
     args=parser.parse_args()
     domain = args.domain
@@ -75,7 +77,9 @@ def main():
     sort_by = args.sort_by
     categorize = args.categorize_by
     page_arg = args.page
-    
+    order = "asc"
+
+
     if not domain:
         print("Please enter YTS domain.\nExiting...")
         exit(0)
@@ -94,36 +98,43 @@ def main():
         print('You entered an invalid quality option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
     if not quality:
-        print('You have not entered a quality option. Downloading all available qualities.')
+        print('You did not enter a quality option. Downloading all available qualities.')
         quality = "all"
 
     if not genre in genre_options and genre:
         print('You entered an invalid genre option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
     if not genre:
-        print('You have not entered a genre option. Downloading all available genres.')
+        print('You did not enter a genre option. Downloading all available genres.')
         genre = "all"
 
     if not minimum_rating in rating_options and minimum_rating:
         print('You entered an invalid rating option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
     if not minimum_rating:
-        print('You have not entered a rating option. Downloading all available ratings.')
+        print('You did not enter a rating option. Downloading all available ratings.')
         minimum_rating = "1"
 
     if not sort_by in sortby_options and sort_by:
         print('You entered an invalid sort option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
     if not sort_by:
-        print('You have not entered a sort option. Downloading by alphabetical order.')
+        print('You did not enter a sorting option. Downloading by alphabetical order.')
         sort_by = "title"
+    if sort_by == "latest":
+        sort_by = "date_added"
+        order = "desc"
 
     if not categorize in category_options and categorize:
         print('You entered an invalid categorizing option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
 
+    if not page_arg:
+        print('You did not enter a page number. Starting from page 1.')
+        page_arg = 1
+
     limit = 50
-    url = "https://yts." + domain + "/api/v2/list_movies.json?" + "quality=" + quality + "&genre=" + genre + "&minimum_rating=" + minimum_rating + "&sort_by=" + sort_by + "&order_by=asc" + "&limit=" + str(limit) + "&page="
+    url = "https://yts." + domain + "/api/v2/list_movies.json?" + "quality=" + quality + "&genre=" + genre + "&minimum_rating=" + minimum_rating + "&sort_by=" + sort_by + "&order_by=" + order + "&limit=" + str(limit) + "&page="
     url_response = requests.get(url)
     page_data = json.loads(url_response.content)
     
@@ -131,11 +142,7 @@ def main():
         print("Could not get a response.\nExiting...")
         exit(0)
 
-    if page_arg:
-        page_start = int(page_arg)
-    else:
-        page_start = 1
-    
+    page_start = int(page_arg)    
     movie_count = page_data["data"]["movie_count"]
     page_count = math.trunc(movie_count / limit)
     counter = 0
