@@ -38,14 +38,14 @@ def filter_torrents(quality, torrent, title_long, directory, movie_rating, movie
         return
 
     if quality == "all" or quality == "1080p":
-        if torrent.get('quality') == "1080p":
-            download_torrent((requests.get(torrent.get('url'))).content, title_long, torrent.get('quality'), directory, movie_rating, movie_genre, categorize)
+        if torrent['quality'] == "1080p":
+            download_torrent((requests.get(torrent['url'])).content, title_long, torrent['quality'], directory, movie_rating, movie_genre, categorize)
     if quality == "all" or quality == "720p":
-        if torrent.get('quality') == "720p":
-            download_torrent((requests.get(torrent.get('url'))).content, title_long, torrent.get('quality'), directory, movie_rating, movie_genre, categorize)
+        if torrent['quality'] == "720p":
+            download_torrent((requests.get(torrent['url'])).content, title_long, torrent['quality'], directory, movie_rating, movie_genre, categorize)
     if quality == "all" or quality == "3d":
-        if torrent.get('quality') == "3D":
-            download_torrent((requests.get(torrent.get('url'))).content, title_long, torrent.get('quality'), directory, movie_rating, movie_genre, categorize)
+        if torrent['quality'] == "3D":
+            download_torrent((requests.get(torrent['url'])).content, title_long, torrent['quality'], directory, movie_rating, movie_genre, categorize)
 
 def main():
     quality_options=["all", "720p", "1080p", "3d"]
@@ -134,16 +134,15 @@ def main():
         page_arg = 1
 
     limit = 50
-    url = "https://yts." + domain + "/api/v2/list_movies.json?" + "quality=" + quality + "&genre=" + genre + "&minimum_rating=" + minimum_rating + "&sort_by=" + sort_by + "&order_by=" + order + "&limit=" + str(limit) + "&page="
-    url_response = requests.get(url)
-    page_data = json.loads(url_response.content)
+    concat_url = "https://yts." + domain + "/api/v2/list_movies.json?" + "quality=" + quality + "&genre=" + genre + "&minimum_rating=" + minimum_rating + "&sort_by=" + sort_by + "&order_by=" + order + "&limit=" + str(limit) + "&page="
+    data = requests.get(concat_url).json()
     
-    if page_data.get("status") != "ok" or not page_data:
+    if data["status"] != "ok" or not data:
         print("Could not get a response.\nExiting...")
         exit(0)
 
     page_start = int(page_arg)    
-    movie_count = page_data["data"]["movie_count"]
+    movie_count = data["data"]["movie_count"]
     page_count = math.trunc(movie_count / limit)
     counter = 0
     movie_counter = 0
@@ -153,11 +152,10 @@ def main():
 
     for page in range(page_start, page_count):
         counter += 1
-        api_url = url + str(page)
+        api_url = concat_url + str(page)
 
-        response = requests.get(api_url).json()
-        data = response.get("data")
-        movies = data.get("movies")
+        page_response = requests.get(api_url).json()
+        movies = page_response["data"]["movies"]
 
         if not movies:
             print("Could not find any movies on this page.\n")     
@@ -168,10 +166,10 @@ def main():
                 continue
             
             movie_counter += 1
-            title_long = movie.get('title_long').translate({ord(i):None for i in '/\:*?"<>|'})
-            movie_rating = movie.get('rating')
-            movie_genres = movie.get('genres')
-            torrents = movie.get('torrents')
+            title_long = movie['title_long'].translate({ord(i):None for i in '/\:*?"<>|'})
+            movie_rating = movie['rating']
+            movie_genres = movie['genres']
+            torrents = movie['torrents']
 
             if categorize and categorize != "rating":
                 for movie_genre in movie_genres:
