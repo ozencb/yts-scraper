@@ -101,34 +101,34 @@ def main():
     
     
     if not quality in quality_options and quality:
-        print('You entered an invalid quality option. Type "--help" to see a list of valid options.\nExiting...')
+        print('Invalid quality option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
     if not quality:
-        print('You did not enter a quality option. Downloading all available qualities.')
+        print('No quality argument was given. Downloading all available qualities by default.')
         quality = "all"
 
     
     if not genre in genre_options and genre:
-        print('You entered an invalid genre option. Type "--help" to see a list of valid options.\nExiting...')
+        print('Invalid genre option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
     if not genre:
-        print('You did not enter a genre option. Downloading all available genres.')
+        print('No genre argument was given. Downloading all available genres by default.')
         genre = "all"
 
     
     if not minimum_rating in rating_options and minimum_rating:
-        print('You entered an invalid rating option. Type "--help" to see a list of valid options.\nExiting...')
+        print('Invalid rating option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
     if not minimum_rating:
-        print('You did not enter a rating option. Downloading all available ratings.')
+        print('No rating argument was given. Downloading all available ratings by default.')
         minimum_rating = "1"
 
     
     if not sort_by in sortby_options and sort_by:
-        print('You entered an invalid sort option. Type "--help" to see a list of valid options.\nExiting...')
+        print('Invalid sorting option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
     if not sort_by:
-        print('You did not enter a sorting option. Downloading by alphabetical order.')
+        print('No sorting argument was given. Downloading in alphabetical order by default.')
         sort_by = "title"
     if sort_by == "latest":
         sort_by = "date_added"
@@ -136,12 +136,12 @@ def main():
 
     
     if not categorize in category_options and categorize:
-        print('You entered an invalid categorizing option. Type "--help" to see a list of valid options.\nExiting...')
+        print('Invalid categorizing option. Type "--help" to see a list of valid options.\nExiting...')
         exit(0)
 
     
     if not page_arg:
-        print('You did not enter a page number. Starting from page 1.')
+        print('No page argument was given. Starting from page 1.')
         page_arg = 1
 
     
@@ -159,9 +159,7 @@ def main():
     counter = 0
     movie_counter = 0
 
-    print("Query was successful.\n")
-    print("Found " + str(movie_count) + " movies. Download starting...\n")
-
+    print("Query was successful.\nFound " + str(movie_count) + " movies. Download starting...\n")
     
     for page in range(page_start, page_count):
         counter += 1
