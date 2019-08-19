@@ -71,7 +71,7 @@ def main():
     
     
     args=parser.parse_args()
-    domain = args.domain
+    domain = args.domain.translate({ord(i):None for i in '.'})
     directory_arg = args.output
     directory = os.path.curdir
     quality = args.quality
