@@ -6,9 +6,36 @@ import sys
 import math
 import string
 import time
+import progressbar
+
+bar = None
+progress = 1
+movie_count = None
+existing_file_counter = 0
+skip_exit_condition = False
 
 
 def download_torrent(bin_content, movie_name, type, directory, rating, genre, categorize): 
+    global existing_file_counter
+    global progress
+    global bar
+    global skip_exit_condition
+
+    
+    if existing_file_counter > 10 and not skip_exit_condition:
+        print("Found 10 existing files in a row. Do you want to keep downloading? Y/N")
+        exit_answer = input()
+
+        if exit_answer.lower() == "n":
+            print("Exiting...")
+            exit()
+        elif exit_answer.lower() == "y":
+            print("Continuing...")
+            existing_file_counter = 0
+            skip_exit_condition = True
+        else:
+            print('Invalid input. Enter "Y" or "N".')
+
     if categorize == "rating":
         os.makedirs((directory + "/" + str(math.trunc(rating))) + "+", exist_ok=True)
         directory += ("/" + str(math.trunc(rating)) + "+")
@@ -23,15 +50,20 @@ def download_torrent(bin_content, movie_name, type, directory, rating, genre, ca
         directory += ("/" + str(genre) + "/" + str(math.trunc(rating)) + "+")
     
     path = os.path.join(directory, movie_name + " " + type + ".torrent")
+    bar.update(progress)
 
     if os.path.isfile(path):
-        print (movie_name + ": File already exists. Skipping...")
+        print(movie_name + ": File already exists. Skipping...")
+        progress += 1
+        existing_file_counter += 1
         return
     else:
         print("Downloading " + movie_name + " " + type)
-    
-    with open(path, 'wb') as f:
-        f.write(bin_content)
+        with open(path, 'wb') as f:
+            f.write(bin_content)
+        progress += 1
+        existing_file_counter = 0
+        return
 
 
 def filter_torrents(quality, torrent, title_long, directory, movie_rating, movie_genre, categorize):
@@ -50,11 +82,23 @@ def filter_torrents(quality, torrent, title_long, directory, movie_rating, movie
             download_torrent((requests.get(torrent['url'])).content, title_long, torrent['quality'], directory, movie_rating, movie_genre, categorize)
 
 
-def main(): 
+def main():
+    progressbar.streams.wrap_stderr()
+    WRAP_STDERR= True
+    progressbar.streams.flush()
+
+    global bar
+    global movie_count
+        
+    quality_options=["all", "720p", "1080p", "3d"]
+    genre_options=["all", "action", "adventure", "animation", "biography", "comedy", "crime", "documentary", "drama", "family", "fantasy", "film-noir", "game-show", "history", "horror", "music", "musical", "mystery", "news", "reality-tv", "romance", "sci-fi", "sport", "talk-show", "thriller", "war", "western"]
+    rating_options=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+    sortby_options=["title", "year", "rating", "latest", "peers", "seeds", "download_count", "like_count", "date_added"]
+    category_options=["none", "rating", "genre", "genre-rating", "rating-genre"]
+    
     desc = "A command-line tool to for downloading .torrent files from YTS"
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument("-d", "--domain", help='Enter a YTS domain like "am" or "lt".', dest='domain', required=True)
-    parser.add_argument("-o", "--output", help="Output Directory", dest='output', required=False)
+    parser.add_argument("-o", "--output", help='Output Directory', dest='output', required=False)
     parser.add_argument("-q", "--quality", help='Movie Quality. Valid arguments are: "all", "720p", "1080p", "3d"', dest='quality', required=False)
     parser.add_argument("-g", "--genre", help='Movie Genre. Valid arguments are: "all", "action", "adventure", "animation", "biography", "comedy", "crime", "documentary", "drama", "family", "fantasy", "film-noir", "game-show", "history", "horror", "music", "musical", "mystery", "news", "reality-tv", "romance", "sci-fi", "sport", "talk-show", "thriller", "war", "western"', dest='genre', required=False)
     parser.add_argument("-r", "--rating", help='Minimum rating score. Integer between 0-10', dest='rating', required=False)
@@ -62,16 +106,7 @@ def main():
     parser.add_argument("-c", "--categorize-by", help='Creates a folder structure. Valid arguments are: "rating", "genre", "rating-genre", "genre-rating"', dest='categorize_by', required=False)
     parser.add_argument("-p", "--page", help='Enter an integer to skip ahead pages', dest='page', required=False)
 
-    
-    quality_options=["all", "720p", "1080p", "3d"]
-    genre_options=["all", "action", "adventure", "animation", "biography", "comedy", "crime", "documentary", "drama", "family", "fantasy", "film-noir", "game-show", "history", "horror", "music", "musical", "mystery", "news", "reality-tv", "romance", "sci-fi", "sport", "talk-show", "thriller", "war", "western"]
-    rating_options=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-    sortby_options=["title", "year", "rating", "latest", "peers", "seeds", "download_count", "like_count", "date_added"]
-    category_options=["none", "rating", "genre", "genre-rating", "rating-genre"]
-    
-    
     args=parser.parse_args()
-    domain = args.domain.translate({ord(i):None for i in '.'})
     directory_arg = args.output
     directory = os.path.curdir
     quality = args.quality
@@ -82,11 +117,6 @@ def main():
     page_arg = args.page
     order = "asc"
     limit = 50
-
-    
-    if not domain:
-        print("Please enter YTS domain.\nExiting...")
-        exit(0)
 
     
     if directory_arg:
@@ -146,21 +176,24 @@ def main():
 
     
 
-    concat_url = "https://yts." + domain + "/api/v2/list_movies.json?" + "quality=" + quality + "&genre=" + genre + "&minimum_rating=" + minimum_rating + "&sort_by=" + sort_by + "&order_by=" + order + "&limit=" + str(limit) + "&page="
+    concat_url = "https://yts.am/api/v2/list_movies.json?" + "quality=" + quality + "&genre=" + genre + "&minimum_rating=" + minimum_rating + "&sort_by=" + sort_by + "&order_by=" + order + "&limit=" + str(limit) + "&page="
     data = requests.get(concat_url).json()
     
     if data["status"] != "ok" or not data:
         print("Could not get a response.\nExiting...")
         exit(0)
 
-    page_start = int(page_arg)    
+    page_start = int(page_arg)
     movie_count = data["data"]["movie_count"]
     page_count = math.trunc(movie_count / limit)
     counter = 0
     movie_counter = 0
 
     print("Query was successful.\nFound " + str(movie_count) + " movies. Download starting...\n")
-    
+
+    widgets = ['[', progressbar.Timer(), ' - ', progressbar.ETA(), '] ',progressbar.Bar()]
+    bar = progressbar.ProgressBar(max_value=movie_count, redirect_stdout=True, widgets=widgets)
+
     for page in range(page_start, page_count):
         counter += 1
         api_url = concat_url + str(page)
@@ -186,11 +219,12 @@ def main():
                 for movie_genre in movie_genres:
                     for torrent in torrents:
                         filter_torrents(quality, torrent, title_long, directory, movie_rating, movie_genre, categorize)
+                
             else:
                 for torrent in torrents:
                     filter_torrents(quality, torrent, title_long, directory, movie_rating, None, categorize)
-    
-    print("Download finished.")
+                    
+        print("Download finished.")
 
 
 if __name__ == "__main__":

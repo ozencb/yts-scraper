@@ -14,7 +14,6 @@ You should use a Torrent client to open these files.
 | Commands                          | Description                                                                                                                  |
 |-----------------------------------|------------------------------------------------------------------------------------------------------------------------------|
 |```-h``` or ```--help```           |Prints help text                                                                                                              |
-|```-d``` or ```--domain```         |YTS domain. This argument is required for the tool to run.                                                                    |
 |```-o``` or ```--output```         |Output directory                                                                                                              |
 |```-q``` or ```--quality```        |Available options are: "all", "720p", "1080p", "3d"                                                                           |
 |```-g``` or ```--genre```          |Available options are: "all", "action", "adventure", "animation", "biography", "comedy", "crime", "documentary", "drama", "family", "fantasy", "film-noir", "game-show", "history", "horror", "music", "musical", "mystery", "news", "reality-tv", "romance", "sci-fi", "sport", "talk-show", "thriller", "war", "western".                                                                             |
