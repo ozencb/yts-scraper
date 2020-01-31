@@ -51,8 +51,12 @@ class Scraper:
     def __get_movie_info(self):
         self.limit = 50
         concat_url = "https://yts.am/api/v2/list_movies.json?" + "quality=" + self.quality + "&genre=" + self.genre + "&minimum_rating=" + self.minimum_rating + "&sort_by=" + self.sort_by + "&order_by=" + self.order + "&limit=" + str(self.limit) + "&page="
-        data = requests.get(concat_url).json()
         
+        try:
+            data = requests.get(concat_url).json()
+        except json.decoder.JSONDecodeError:
+            print("Could not decode JSON")
+
         if data["status"] != "ok" or not data:
             print("Could not get a response.\nExiting...")
             exit(0)
