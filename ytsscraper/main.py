@@ -71,17 +71,14 @@ def main():
                         default=1,
                         const=1,
                         nargs='?')
-
-    args = parser.parse_args()
-    scraper = Scraper(args)
-    scraper.download()
     
-
-if __name__ == "__main__":
     try:
-        main()
+        args = parser.parse_args()
+        scraper = Scraper(args)
+        scraper.download()
+
     except KeyboardInterrupt:
-            print('\nKeypress Detected.\nExiting...')
+        print('\nKeypress Detected. Exiting...\n')
     except Exception:
         traceback.print_exc()
     exit(0)
