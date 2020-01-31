@@ -64,7 +64,7 @@ def main():
                         nargs='?')
     
     parser.add_argument("-p", "--page",
-                        help='Enter an integer to skip ahead pages',
+                        help='Enter an integer to skip ahead number of pages',
                         dest='page',
                         type=int,
                         required=False,
