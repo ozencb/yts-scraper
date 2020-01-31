@@ -1,4 +1,5 @@
 import argparse
+import traceback
 from ytsscraper.scraper import Scraper
 
 
@@ -80,6 +81,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-            print('\nKeypress Detected.')
-            print('\nExiting...')
-            exit(0)
+            print('\nKeypress Detected.\nExiting...')
+    except Exception:
+        traceback.print_exc()
+    exit(0)
