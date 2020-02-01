@@ -7,11 +7,12 @@ import string
 import time
 from tqdm import tqdm
 
-class Scraper: 
+class Scraper:
     # Constructor
     def __init__(self, args):
         self.args = args
         return
+
     
     # Argument validation
     def __validate_args(self):
@@ -20,28 +21,28 @@ class Scraper:
         # Set output directory
         if args.output:
             os.makedirs(str(args.output), exist_ok=True)
-            directory = str(os.path.curdir) + "/" + str(args.output)
+            directory = str(os.path.curdir) + '/' + str(args.output)
         elif not args.output and not args.categorize_by:
             os.makedirs('Torrents', exist_ok=True)
-            directory = os.path.curdir + "/Torrents"
+            directory = os.path.curdir + '/Torrents'
         elif not args.output and args.categorize_by:
             os.makedirs(str(args.categorize_by).title(), exist_ok=True)
-            directory = os.path.curdir + "/" + str(args.categorize_by)
+            directory = os.path.curdir + '/' + str(args.categorize_by)
 
         # Args for downloading in reverse chronological order     
-        if args.sort_by == "latest":
-            self.sort_by = "date_added"
-            self.order_by = "desc"
+        if args.sort_by == 'latest':
+            self.sort_by = 'date_added'
+            self.order_by = 'desc'
 
         self.directory = directory
-        self.quality = args.quality
+        self.quality = '3D' if (args.quality == '3d') else args.quality # Check 3D arg casing 
         self.genre = args.genre
         self.minimum_rating = args.rating
         self.categorize = args.categorize_by
         self.page_arg = args.page
 
     # Connect to API and extract initial data
-    def __get_movie_info(self):
+    def __get_api_data(self):
         # YTS API has a limit of 50 entries
         self.limit = 50
         
@@ -55,25 +56,35 @@ class Scraper:
             limit = self.limit
         ) 
         
+        # Exception handling for connection errors
+        try:
+            r = requests.get(url,timeout=5)
+            r.raise_for_status()
+        except requests.exceptions.HTTPError as errh:
+            print("HTTP Error:",errh)
+            exit(0)
+        except requests.exceptions.ConnectionError as errc:
+            print("Error Connecting:",errc)
+            exit(0)
+        except requests.exceptions.Timeout as errt:
+            print("Timeout Error:",errt)
+            exit(0)
+        except requests.exceptions.RequestException as err:
+            print("There was an error.",err)
+            exit(0)
+
         # Exception handling for JSON decoding errors
         try:
-            data = requests.get(url).json()
+            data = r.json()
         except json.decoder.JSONDecodeError:
             print("Could not decode JSON")
-
-        # Check if API sent any data
-        if data["status"] != "ok" or not data:
-            print("Could not get a response.\nExiting...")
-            exit(0)
         
         # Adjust movie count according to starting page
-        movie_count = data["data"]["movie_count"] if (self.page_arg == 1) else ((data["data"]["movie_count"]) - ((self.page_arg - 1) * self.limit))
+        movie_count = data['data']['movie_count'] if (self.page_arg == 1) else ((data['data']['movie_count']) - ((self.page_arg - 1) * self.limit))
         
-        # Assign number of movies to be downloaded and API URL properties
         self.movie_count = movie_count
         self.url = url
 
-    # Start
     def __initialize_download(self):
         # Used for exit/continue prompt that's triggered after 10 existing files
         self.existing_file_counter = 0
@@ -103,14 +114,14 @@ class Scraper:
             print("Query was successful.\nFound %d movies. Download starting...\n" % (self.movie_count))
         
         # Iterate through and tdqm progress bar
-        with tqdm(total=self.movie_count, position=0, leave=True, desc='Downloading', unit="Files") as pbar:
+        with tqdm(total=self.movie_count, position=0, leave=True, desc='Downloading', unit='Files') as pbar:
             for page in tqdm((range_), total=self.movie_count, position=0, leave=True):
                 url = self.url + str(page)
 
                 # Send request to API
                 page_response = requests.get(url).json()
                 
-                movies = page_response["data"]["movies"]
+                movies = page_response['data']['movies']
                 
                 # Movies found on current page
                 if not movies:
@@ -127,65 +138,66 @@ class Scraper:
 
     # Determine which .torrent files to download
     def __filter_torrents(self, movie):
+        movie_id = str(movie['id'])
+        movie_rating = movie['rating']
+        movie_genres = movie['genres']
+
         # Every torrent option for current movie
         torrents = movie['torrents']
-        # Movie ID
-        movie_id = str(movie['id'])
         # Remove illegal file/directory characters
         movie_name = movie['title_long'].translate({ord(i):None for i in '/\:*?"<>|'})
-        # Movie Rating
-        movie_rating = movie['rating']
-        # Genres of the movie
-        movie_genres = movie['genres']
+
         # Used to multiple download messages for multi-folder categorization
         is_download_successful = False
 
         if movie_id in self.downloaded_movie_ids:
             return
 
+        # In case movie has no available torrents
         if torrents == None:
             tqdm.write("Could not find any torrents for " + movie_name + ". Skipping...")
             return
         
-
+        # Iterate through available torrent files
         for torrent in torrents:
             quality = torrent['quality']
-            if self.categorize and self.categorize != "rating":
-                if self.quality == "all" or self.quality == quality:
+            if self.categorize and self.categorize != 'rating':
+                if self.quality == 'all' or self.quality == quality:
                     bin_content = (requests.get(torrent['url'])).content
                     
                     for genre in movie_genres:
                         path = self.__build_path(movie_name, movie_rating, quality, genre)
                         is_download_successful = self.__download_file(bin_content, path, movie_name, movie_id)
             else:
-                if self.quality == "all" or self.quality == quality:
+                if self.quality == 'all' or self.quality == quality:
                     bin_content = (requests.get(torrent['url'])).content
                     path = self.__build_path(movie_name, movie_rating, quality, None)
                     is_download_successful = self.__download_file(bin_content, path, movie_name, movie_id)
             
-            if is_download_successful:
+            if is_download_successful and self.quality == 'all' or self.quality == quality:
                 tqdm.write("Downloaded " + movie_name + " " + quality.upper())
 
 
-
+    # Creates a file path for each download 
     def __build_path(self, movie_name, rating, quality, movie_genre):
         directory = self.directory
 
-        if self.categorize == "rating":
-            os.makedirs((directory + "/" + str(math.trunc(rating))) + "+", exist_ok=True)
-            directory += ("/" + str(math.trunc(rating)) + "+")
-        elif self.categorize == "genre":
-            os.makedirs((directory + "/" + str(movie_genre)), exist_ok=True)
-            directory += ("/" + str(movie_genre))
-        elif self.categorize == "rating-genre":
-            os.makedirs((directory + "/" + str(math.trunc(rating)) + "+/" + movie_genre), exist_ok=True)
-            directory += ("/" + str(math.trunc(rating)) + "+/" + movie_genre)
-        elif self.categorize == "genre-rating":
-            os.makedirs((directory + "/" + str(movie_genre) + "/" + str(math.trunc(rating))) + "+", exist_ok=True)
-            directory += ("/" + str(movie_genre) + "/" + str(math.trunc(rating)) + "+")
+        if self.categorize == 'rating':
+            os.makedirs((directory + '/' + str(math.trunc(rating))) + '+', exist_ok=True)
+            directory += ('/' + str(math.trunc(rating)) + '+')
+        elif self.categorize == 'genre':
+            os.makedirs((directory + '/' + str(movie_genre)), exist_ok=True)
+            directory += ('/' + str(movie_genre))
+        elif self.categorize == 'rating-genre':
+            os.makedirs((directory + '/' + str(math.trunc(rating)) + '+/' + movie_genre), exist_ok=True)
+            directory += ('/' + str(math.trunc(rating)) + '+/' + movie_genre)
+        elif self.categorize == 'genre-rating':
+            os.makedirs((directory + '/' + str(movie_genre) + '/' + str(math.trunc(rating))) + '+', exist_ok=True)
+            directory += ('/' + str(movie_genre) + '/' + str(math.trunc(rating)) + '+')
         
-        return os.path.join(directory, movie_name + " " + quality + ".torrent")
+        return os.path.join(directory, movie_name + ' ' + quality + '.torrent')
 
+    # Write binary content to .torrent file
     def __download_file(self, bin_content, path, movie_name, movie_id):
         if self.existing_file_counter > 10 and not self.skip_exit_condition:
             self.__prompt_existing_files()
@@ -200,15 +212,16 @@ class Scraper:
             self.downloaded_movie_ids.append(movie_id)
             self.existing_file_counter = 0
             return True
-        
+    
+    # Is triggered when the script hits 10 consecutive existing files
     def __prompt_existing_files(self):
         tqdm.write("Found 10 existing files in a row. Do you want to keep downloading? Y/N")
         exit_answer = input()
 
-        if exit_answer.lower() == "n":
+        if exit_answer.lower() == 'n':
             tqdm.write("Exiting...")
             exit()
-        elif exit_answer.lower() == "y":
+        elif exit_answer.lower() == 'y':
             tqdm.write("Continuing...")
             self.existing_file_counter = 0
             self.skip_exit_condition = True
@@ -217,5 +230,5 @@ class Scraper:
 
     def download(self):
         self.__validate_args()
-        self.__get_movie_info()
+        self.__get_api_data()
         self.__initialize_download()
