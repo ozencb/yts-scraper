@@ -22,12 +22,9 @@ class Scraper:
         if args.output:
             os.makedirs(str(args.output), exist_ok=True)
             directory = str(os.path.curdir) + '/' + str(args.output)
-        elif not args.output and not args.categorize_by:
-            os.makedirs('Torrents', exist_ok=True)
-            directory = os.path.curdir + '/Torrents'
-        elif not args.output and args.categorize_by:
+        else:
             os.makedirs(str(args.categorize_by).title(), exist_ok=True)
-            directory = os.path.curdir + '/' + str(args.categorize_by)
+            directory = os.path.curdir + '/' + str(args.categorize_by).title()
 
         # Args for downloading in reverse chronological order     
         if args.sort_by == 'latest':
@@ -78,6 +75,7 @@ class Scraper:
             data = r.json()
         except json.decoder.JSONDecodeError:
             print("Could not decode JSON")
+
         
         # Adjust movie count according to starting page
         movie_count = data['data']['movie_count'] if (self.page_arg == 1) else ((data['data']['movie_count']) - ((self.page_arg - 1) * self.limit))
