@@ -1,3 +1,0 @@
-requests==2.22.0
-progressbar33==2.4
-argparse==1.4.0

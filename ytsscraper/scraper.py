@@ -5,19 +5,19 @@ import sys
 import math
 import string
 import time
-import progressbar
+from tqdm import tqdm
 
-class Scraper:
-    existing_file_counter = 0
-    skip_exit_condition = False
-    
+class Scraper: 
+    # Constructor
     def __init__(self, args):
         self.args = args
         return
     
+    # Argument validation
     def __validate_args(self):
         args = self.args
 
+        # Set output directory
         if args.output:
             os.makedirs(str(args.output), exist_ok=True)
             directory = str(os.path.curdir) + "/" + str(args.output)
@@ -27,10 +27,11 @@ class Scraper:
         elif not args.output and args.categorize_by:
             os.makedirs(str(args.categorize_by).title(), exist_ok=True)
             directory = os.path.curdir + "/" + str(args.categorize_by)
-                    
+
+        # Args for downloading in reverse chronological order     
         if args.sort_by == "latest":
             self.sort_by = "date_added"
-            self.order = "desc"
+            self.order_by = "desc"
 
         self.directory = directory
         self.quality = args.quality
@@ -39,146 +40,182 @@ class Scraper:
         self.categorize = args.categorize_by
         self.page_arg = args.page
 
-    def __initialize_progress_bar(self):
-        progressbar.streams.wrap_stderr()
-        WRAP_STDERR= True
-        progressbar.streams.flush()
-        
-        widgets = ['[', progressbar.Timer(), ' - ', progressbar.ETA(), '] ',progressbar.Bar()]
-        self.bar = progressbar.ProgressBar(max_value=self.movie_count, redirect_stdout=True, widgets=widgets)
-        self.progress = 1
-
+    # Connect to API and extract initial data
     def __get_movie_info(self):
+        # YTS API has a limit of 50 entries
         self.limit = 50
-        concat_url = "https://yts.am/api/v2/list_movies.json?" + "quality=" + self.quality + "&genre=" + self.genre + "&minimum_rating=" + self.minimum_rating + "&sort_by=" + self.sort_by + "&order_by=" + self.order + "&limit=" + str(self.limit) + "&page="
         
+        # Formatted URL string
+        url = 'https://yts.am/api/v2/list_movies.json?quality={quality}&genre={genre}&minimum_rating={minimum_rating}&sort_by={sort_by}&order_by={order_by}&limit={limit}&page='.format(
+            quality = self.quality, 
+            genre = self.genre, 
+            minimum_rating = self.minimum_rating, 
+            sort_by = self.sort_by, 
+            order_by = self.order_by, 
+            limit = self.limit
+        ) 
+        
+        # Exception handling for JSON decoding errors
         try:
-            data = requests.get(concat_url).json()
+            data = requests.get(url).json()
         except json.decoder.JSONDecodeError:
             print("Could not decode JSON")
 
+        # Check if API sent any data
         if data["status"] != "ok" or not data:
             print("Could not get a response.\nExiting...")
             exit(0)
         
-        self.movie_count = data["data"]["movie_count"]
-        self.concat_url = concat_url
-           
+        # Adjust movie count according to starting page
+        movie_count = data["data"]["movie_count"] if (self.page_arg == 1) else ((data["data"]["movie_count"]) - ((self.page_arg - 1) * self.limit))
+        
+        # Assign number of movies to be downloaded and API URL properties
+        self.movie_count = movie_count
+        self.url = url
+
+    # Start
     def __initialize_download(self):
-        categorize = self.categorize
-        page_start = int(self.page_arg)
-        movie_count = self.movie_count
-        url = self.concat_url
-        page_count = math.trunc(movie_count / self.limit) + 1
-        counter = 0
-        movie_counter = 0
+        # Used for exit/continue prompt that's triggered after 10 existing files
+        self.existing_file_counter = 0
+        self.skip_exit_condition = False
+
+        # YTS API sometimes returns duplicate objects and 
+        # the script tries to download the movie more than once.
+        # IDs of downloaded movie is stored in this array 
+        # to check if it's been downloaded before
+        self.downloaded_movie_ids = []
+
+        # Calculate page count and make sure that it doesn't get the value of 1 to prevent range(1, 1)
+        page_count = 2 if ((math.trunc(self.movie_count / self.limit) + 1) == 1) else (math.trunc(self.movie_count / self.limit) + 1)
+
+        range_ = range(int(self.page_arg), page_count)
+
 
         print("Initializing download with these parameters:")
-        print("\t\nDirectory:\t%s\t\nQuality:\t%s\t\nMovie Genre:\t%s\t\nMinimum Rating:\t%s\t\nCategorization:\t%s\t\nStarting page:\t%s\n" % (self.directory, self.quality, self.genre, self.minimum_rating, self.categorize, self.page_arg))
+        print("\t\nDirectory:\t%s\t\nQuality:\t%s\t\nMovie Genre:\t%s\t\nMinimum Rating:\t%s\t\nCategorization:\t%s\t\nStarting page:\t%s\n" % 
+            (self.directory, self.quality, self.genre, self.minimum_rating, self.categorize, self.page_arg))
 
-        if (movie_count <= 0):
+
+        if (self.movie_count <= 0):
             print("Could not find any movies with given parameters")
             exit(0)
         else:
-            print("Query was successful.\nFound " + str(movie_count) + " movies. Download starting...\n")
+            print("Query was successful.\nFound %d movies. Download starting...\n" % (self.movie_count))
         
-        for page in range(page_start, page_count):
-            counter += 1
-            api_url = url + str(page)
+        # Iterate through and tdqm progress bar
+        with tqdm(total=self.movie_count, position=0, leave=True, desc='Downloading', unit="Files") as pbar:
+            for page in tqdm((range_), total=self.movie_count, position=0, leave=True):
+                url = self.url + str(page)
 
-            page_response = requests.get(api_url).json()
-            movies = page_response["data"]["movies"]
-            if not movies:
-                print("Could not find any movies on this page.\n")     
-            
-            for movie in movies:
-                if not movie:
-                    print("Could not find the movie. Skipping...\n")
-                    continue
+                # Send request to API
+                page_response = requests.get(url).json()
                 
-                movie_counter += 1
-                title_long = movie['title_long'].translate({ord(i):None for i in '/\:*?"<>|'})
-                movie_rating = movie['rating']
-                movie_genres = movie['genres']
-                torrents = movie['torrents']
-
-                if categorize and categorize != "rating":
-                    for movie_genre in movie_genres:
-                        for torrent in torrents:
-                            self.__filter_torrents(torrent, title_long, movie_rating, movie_genre)
+                movies = page_response["data"]["movies"]
+                
+                # Movies found on current page
+                if not movies:
+                    print("Could not find any movies on this page.\n")     
+                
+                # Iterate through each movie on current page
+                for movie in movies:
+                    self.__filter_torrents(movie)
+                    # Update progress bar
+                    pbar.update()
                     
-                else:
-                    for torrent in torrents:
-                        self.__filter_torrents(torrent, title_long, movie_rating, None)
-                    
-        print("Download finished.")
+        tqdm.write("Download finished.")
+        pbar.close()
 
-    def __filter_torrents(self, torrent, title_long, movie_rating, movie_genre):
-        quality = self.quality
-        directory = self.directory
-        
-        if torrent == None:
-            print("Could not find any torrents for " + title_long + ". Skipping...\n")
+    # Determine which .torrent files to download
+    def __filter_torrents(self, movie):
+        # Every torrent option for current movie
+        torrents = movie['torrents']
+        # Movie ID
+        movie_id = str(movie['id'])
+        # Remove illegal file/directory characters
+        movie_name = movie['title_long'].translate({ord(i):None for i in '/\:*?"<>|'})
+        # Movie Rating
+        movie_rating = movie['rating']
+        # Genres of the movie
+        movie_genres = movie['genres']
+        # Used to multiple download messages for multi-folder categorization
+        is_download_successful = False
+
+        if movie_id in self.downloaded_movie_ids:
             return
 
-        if quality == "all" or quality == "1080p":
-            if torrent['quality'] == "1080p":
-                self.__download_torrent((requests.get(torrent['url'])).content, title_long, torrent['quality'], directory, movie_rating, movie_genre)
-        if quality == "all" or quality == "720p":
-            if torrent['quality'] == "720p":
-                self.__download_torrent((requests.get(torrent['url'])).content, title_long, torrent['quality'], directory, movie_rating, movie_genre)
-        if quality == "all" or quality == "3d":
-            if torrent['quality'] == "3D":
-                self.__download_torrent((requests.get(torrent['url'])).content, title_long, torrent['quality'], directory, movie_rating, movie_genre)
-
-    def __download_torrent(self, bin_content, movie_name, type, directory, rating, genre): 
-        categorize = self.categorize
+        if torrents == None:
+            tqdm.write("Could not find any torrents for " + movie_name + ". Skipping...")
+            return
         
-        if self.existing_file_counter > 10 and not self.skip_exit_condition:
-            print("Found 10 existing files in a row. Do you want to keep downloading? Y/N")
-            exit_answer = input()
 
-            if exit_answer.lower() == "n":
-                print("Exiting...")
-                exit()
-            elif exit_answer.lower() == "y":
-                print("Continuing...")
-                self.existing_file_counter = 0
-                self.skip_exit_condition = True
+        for torrent in torrents:
+            quality = torrent['quality']
+            if self.categorize and self.categorize != "rating":
+                if self.quality == "all" or self.quality == quality:
+                    bin_content = (requests.get(torrent['url'])).content
+                    
+                    for genre in movie_genres:
+                        path = self.__build_path(movie_name, movie_rating, quality, genre)
+                        is_download_successful = self.__download_file(bin_content, path, movie_name, movie_id)
             else:
-                print('Invalid input. Enter "Y" or "N".')
+                if self.quality == "all" or self.quality == quality:
+                    bin_content = (requests.get(torrent['url'])).content
+                    path = self.__build_path(movie_name, movie_rating, quality, None)
+                    is_download_successful = self.__download_file(bin_content, path, movie_name, movie_id)
+            
+            if is_download_successful:
+                tqdm.write("Downloaded " + movie_name + " " + quality.upper())
 
-        if categorize == "rating":
+
+
+    def __build_path(self, movie_name, rating, quality, movie_genre):
+        directory = self.directory
+
+        if self.categorize == "rating":
             os.makedirs((directory + "/" + str(math.trunc(rating))) + "+", exist_ok=True)
             directory += ("/" + str(math.trunc(rating)) + "+")
-        elif categorize == "genre":
-            os.makedirs((directory + "/" + str(genre)), exist_ok=True)
-            directory += ("/" + str(genre))
-        elif categorize == "rating-genre":
-            os.makedirs((directory + "/" + str(math.trunc(rating)) + "+/" + genre), exist_ok=True)
-            directory += ("/" + str(math.trunc(rating)) + "+/" + genre)
-        elif categorize == "genre-rating":
-            os.makedirs((directory + "/" + str(genre) + "/" + str(math.trunc(rating))) + "+", exist_ok=True)
-            directory += ("/" + str(genre) + "/" + str(math.trunc(rating)) + "+")
+        elif self.categorize == "genre":
+            os.makedirs((directory + "/" + str(movie_genre)), exist_ok=True)
+            directory += ("/" + str(movie_genre))
+        elif self.categorize == "rating-genre":
+            os.makedirs((directory + "/" + str(math.trunc(rating)) + "+/" + movie_genre), exist_ok=True)
+            directory += ("/" + str(math.trunc(rating)) + "+/" + movie_genre)
+        elif self.categorize == "genre-rating":
+            os.makedirs((directory + "/" + str(movie_genre) + "/" + str(math.trunc(rating))) + "+", exist_ok=True)
+            directory += ("/" + str(movie_genre) + "/" + str(math.trunc(rating)) + "+")
         
-        path = os.path.join(directory, movie_name + " " + type + ".torrent")
-        self.bar.update(self.progress)
+        return os.path.join(directory, movie_name + " " + quality + ".torrent")
+
+    def __download_file(self, bin_content, path, movie_name, movie_id):
+        if self.existing_file_counter > 10 and not self.skip_exit_condition:
+            self.__prompt_existing_files()
 
         if os.path.isfile(path):
-            print(movie_name + ": File already exists. Skipping...")
-            self.progress += 1
+            tqdm.write(movie_name + ": File already exists. Skipping...")
             self.existing_file_counter += 1
-            return
+            return False
         else:
-            print("Downloading " + movie_name + " " + type)
             with open(path, 'wb') as f:
                 f.write(bin_content)
-            self.progress += 1
+            self.downloaded_movie_ids.append(movie_id)
             self.existing_file_counter = 0
-            return
+            return True
+        
+    def __prompt_existing_files(self):
+        tqdm.write("Found 10 existing files in a row. Do you want to keep downloading? Y/N")
+        exit_answer = input()
+
+        if exit_answer.lower() == "n":
+            tqdm.write("Exiting...")
+            exit()
+        elif exit_answer.lower() == "y":
+            tqdm.write("Continuing...")
+            self.existing_file_counter = 0
+            self.skip_exit_condition = True
+        else:
+            tqdm.write('Invalid input. Enter "Y" or "N".')
 
     def download(self):
         self.__validate_args()
         self.__get_movie_info()
-        self.__initialize_progress_bar()
         self.__initialize_download()

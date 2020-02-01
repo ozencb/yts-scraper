@@ -82,3 +82,6 @@ def main():
     except Exception:
         traceback.print_exc()
     exit(0)
+
+if __name__ == "__main__":
+    main()
