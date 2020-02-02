@@ -7,5 +7,6 @@ setup(  name='YTS Scraper',
         packages=find_packages(),
         install_requires=['requests', 'argparse', 'tqdm'],
         entry_points={'console_scripts': 'yts-scraper = yts_scraper.main:main'},
-        license=open('LICENSE').read()
+        license=open('LICENSE').read(),
+        keywords=['yts', 'yify', 'scraper', 'media', 'download', 'downloader', 'torrent']
     )

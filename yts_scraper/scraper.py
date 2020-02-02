@@ -20,11 +20,11 @@ class Scraper:
 
         # Set output directory
         if args.output:
-            os.makedirs(str(args.output), exist_ok=True)
-            directory = str(os.path.curdir) + '/' + str(args.output)
+            os.makedirs(args.output, exist_ok=True)
+            directory = os.path.curdir + '/' + args.output
         else:
-            os.makedirs(str(args.categorize_by).title(), exist_ok=True)
-            directory = os.path.curdir + '/' + str(args.categorize_by).title()
+            os.makedirs(args.categorize_by.title(), exist_ok=True)
+            directory = os.path.curdir + '/' + args.categorize_by.title()
 
         # Args for downloading in reverse chronological order     
         if args.sort_by == 'latest':
