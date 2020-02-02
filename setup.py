@@ -6,6 +6,6 @@ setup(  name='YTS Scraper',
         description='A command-line tool to for downloading .torrent files from YTS',
         packages=find_packages(),
         install_requires=['requests', 'argparse', 'tqdm'],
-        entry_points={'console_scripts': 'yts-scraper = ytsscraper.main:main'},
+        entry_points={'console_scripts': 'yts-scraper = yts_scraper.main:main'},
         license=open('LICENSE').read()
     )

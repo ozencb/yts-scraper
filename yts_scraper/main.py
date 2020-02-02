@@ -1,6 +1,6 @@
 import argparse
 import traceback
-from ytsscraper.scraper import Scraper
+from yts_scraper.scraper import Scraper
 
 
 def main():
