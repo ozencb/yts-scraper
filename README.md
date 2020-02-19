@@ -36,6 +36,7 @@ For instance, running this command would download every 1080p sci-fi movie and t
 |`-h` or `--help`           |Prints help text. Also prints out all the available optional arguments.                                                                       |
 |`-o` or `--output`         |Output directory                                                                                                                              |
 |`-b` or `--background`     |Append "-b" to download movie posters. This will pack .torrent file and the image together in a folder.                                       |
+|`-i` or `--imdb-id`        |Append -i to append IMDb ID to filename.                                                                                                      |
 |`-q` or `--quality`        |Video quality. Available options are: "all", "720p", "1080p", "3d"                                                                            |
 |`-g` or `--genre`          |Movie genre. Available options are: "all", "action", "adventure", "animation", "biography", "comedy", "crime", "documentary", "drama", "family", "fantasy", "film-noir", "game-show", "history", "horror", "music", "musical", "mystery", "news", "reality-tv", "romance", "sci-fi", "sport", "talk-show", "thriller", "war", "western".                                              |
 |`-r` or `--rating`         |Minimum rating score. Enter an integer between 0 and 9.                                                                                       |
