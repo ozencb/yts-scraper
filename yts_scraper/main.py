@@ -72,6 +72,16 @@ def main():
                         const=True,
                         nargs='?')
 
+    parser.add_argument('-i', '--imdb-id',
+                        help='Append -i to append IMDb ID to filename.',
+                        dest='imdb_id',
+                        type=bool,
+                        required=False,
+                        default=False,
+                        const=True,
+                        nargs='?')
+
+
     parser.add_argument('-p', '--page',
                         help='Enter an integer to skip ahead number of pages',
                         dest='page',

@@ -39,6 +39,7 @@ class Scraper:
         self.categorize = args.categorize_by
         self.page_arg = args.page
         self.poster = args.background
+        self.imdb_id = args.imdb_id
 
     # Connect to API and extract initial data
     def __get_api_data(self):
@@ -144,6 +145,7 @@ class Scraper:
         movie_id = str(movie['id'])
         movie_rating = movie['rating']
         movie_genres = movie['genres']
+        imdb_id = movie['imdb_code']
 
         # Every torrent option for current movie
         torrents = movie['torrents']
@@ -171,12 +173,12 @@ class Scraper:
                     bin_content_tor = (requests.get(torrent['url'])).content
                     
                     for genre in movie_genres:
-                        path = self.__build_path(movie_name, movie_rating, quality, genre)
+                        path = self.__build_path(movie_name, movie_rating, quality, genre, imdb_id)
                         is_download_successful = self.__download_file(bin_content_tor, bin_content_img, path, movie_name, movie_id)
             else:
                 if self.quality == 'all' or self.quality == quality:
                     bin_content_tor = (requests.get(torrent['url'])).content
-                    path = self.__build_path(movie_name, movie_rating, quality, None)
+                    path = self.__build_path(movie_name, movie_rating, quality, None, imdb_id)
                     is_download_successful = self.__download_file(bin_content_tor, bin_content_img, path, movie_name, movie_id)
             
             if is_download_successful and self.quality == 'all' or self.quality == quality:
@@ -185,7 +187,7 @@ class Scraper:
 
 
     # Creates a file path for each download 
-    def __build_path(self, movie_name, rating, quality, movie_genre):
+    def __build_path(self, movie_name, rating, quality, movie_genre, imdb_id):
         directory = self.directory
         
         if self.categorize == 'rating':
@@ -201,8 +203,10 @@ class Scraper:
             directory += '/' + movie_name
 
         os.makedirs(directory, exist_ok=True)
+
+        filename = (movie_name + ' ' + quality + ' - ' + imdb_id) if self.imdb_id else (movie_name + ' ' + quality)
         
-        path = os.path.join(directory, movie_name + ' ' + quality)
+        path = os.path.join(directory, filename)
         return path
 
     # Write binary content to .torrent file
