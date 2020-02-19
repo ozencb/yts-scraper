@@ -62,7 +62,16 @@ def main():
                         default='rating',
                         const='rating',
                         nargs='?')
-    
+
+    parser.add_argument('-b', '--background',
+                        help='Append -b to download movie posters. This will pack .torrent file and the image together in a folder.',
+                        dest='background',
+                        type=bool,
+                        required=False,
+                        default=False,
+                        const=True,
+                        nargs='?')
+
     parser.add_argument('-p', '--page',
                         help='Enter an integer to skip ahead number of pages',
                         dest='page',
@@ -71,6 +80,7 @@ def main():
                         default=1,
                         const=1,
                         nargs='?')
+
     
     try:
         args = parser.parse_args()

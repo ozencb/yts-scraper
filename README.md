@@ -1,5 +1,7 @@
 # YTS Scraper
 
+![](Gif.gif)
+
 ## Description
 **yts-scraper** is a command-line tool for downloading .torrent files from YTS. 
 It requires Python 3.0+.
@@ -23,22 +25,23 @@ To start scraping run:
 `yts-scraper [OPTIONS]`
 
 
-For instance, running this command would download every 1080p sci-fi movie with an IMDb score of 8 or higher, and store them in rating>genre structured subdirectories.
+For instance, running this command would download every 1080p sci-fi movie and their posters with an IMDb score of 8 or higher, and store them in rating>genre structured subdirectories.
 
-`yts-scraper -q 1080p -g sci-fi -r 8 -c rating-genre`
+`yts-scraper -q 1080p -g sci-fi -r 8 -c rating-genre -b`
 
 ## Options
 
-| Commands                          | Description                                                                                                                  |
-|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------|
-|`-h` or `--help`           |Prints help text. Also prints out all the available optional arguments.                                                                |
-|`-o` or `--output`         |Output directory                                                                                                              |
-|`-q` or `--quality`        |Video quality. Available options are: "all", "720p", "1080p", "3d"                                                                           |
-|`-g` or `--genre`          |Movie genre. Available options are: "all", "action", "adventure", "animation", "biography", "comedy", "crime", "documentary", "drama", "family", "fantasy", "film-noir", "game-show", "history", "horror", "music", "musical", "mystery", "news", "reality-tv", "romance", "sci-fi", "sport", "talk-show", "thriller", "war", "western".                                                                             |
-|`-r` or `--rating`         |Minimum rating score. Enter an integer between 0 and 9.                                                                       |
+| Commands                          | Description                                                                                                                          |
+|-----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+|`-h` or `--help`           |Prints help text. Also prints out all the available optional arguments.                                                                       |
+|`-o` or `--output`         |Output directory                                                                                                                              |
+|`-b` or `--background`     |Append "-b" to download movie posters. This will pack .torrent file and the image together in a folder.                                       |
+|`-q` or `--quality`        |Video quality. Available options are: "all", "720p", "1080p", "3d"                                                                            |
+|`-g` or `--genre`          |Movie genre. Available options are: "all", "action", "adventure", "animation", "biography", "comedy", "crime", "documentary", "drama", "family", "fantasy", "film-noir", "game-show", "history", "horror", "music", "musical", "mystery", "news", "reality-tv", "romance", "sci-fi", "sport", "talk-show", "thriller", "war", "western".                                              |
+|`-r` or `--rating`         |Minimum rating score. Enter an integer between 0 and 9.                                                                                       |
 |`-s` or `--sort-by`        |Download order. Available options are: "title", "year", "rating", "latest", "peers", "seeds", "download_count", "like_count", "date_added"    |
-|`-c` or `--categorize-by`  |Creates a folder structure. Available options are: "rating", "genre", "rating-genre", "genre-rating"                          |
-|`-p` or `--page`           |Can be used to skip ahead an amount of pages.                                                                                 |
+|`-c` or `--categorize-by`  |Creates a folder structure. Available options are: "rating", "genre", "rating-genre", "genre-rating"                                          |
+|`-p` or `--page`           |Can be used to skip ahead an amount of pages.                                                                                                 |
 
 ## Disclaimer
 This is a proof of concept tool built mainly to practice programming.

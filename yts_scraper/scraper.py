@@ -5,6 +5,7 @@ import sys
 import math
 import string
 import time
+from concurrent.futures.thread import ThreadPoolExecutor
 from tqdm import tqdm
 
 class Scraper:
@@ -37,6 +38,7 @@ class Scraper:
         self.minimum_rating = args.rating
         self.categorize = args.categorize_by
         self.page_arg = args.page
+        self.poster = args.background
 
     # Connect to API and extract initial data
     def __get_api_data(self):
@@ -111,9 +113,13 @@ class Scraper:
         else:
             print("Query was successful.\nFound %d movies. Download starting...\n" % (self.movie_count))
         
-        # Iterate through and tdqm progress bar
-        with tqdm(total=self.movie_count, position=0, leave=True, desc='Downloading', unit='Files') as pbar:
-            for page in tqdm((range_), total=self.movie_count, position=0, leave=True):
+        # Create progress bar
+        self.pbar = tqdm(total=self.movie_count, position=0, leave=True, desc='Downloading', unit='Files')
+        
+        # Multiprocess executor
+        # Setting max_workers to None makes executor utilize CPU number * 5 at most
+        with ThreadPoolExecutor(max_workers=None) as executor:
+            for page in range_:
                 url = self.url + str(page)
 
                 # Send request to API
@@ -123,16 +129,15 @@ class Scraper:
                 
                 # Movies found on current page
                 if not movies:
-                    print("Could not find any movies on this page.\n")     
+                    print("Could not find any movies on this page.\n")
+
+                # Wrap twdm around executor to update pbar with every process
+                tqdm(executor.map(self.__filter_torrents, movies), total=self.movie_count, position=0, leave=True)       
                 
-                # Iterate through each movie on current page
-                for movie in movies:
-                    self.__filter_torrents(movie)
-                    # Update progress bar
-                    pbar.update()
-                    
-        tqdm.write("Download finished.")
-        pbar.close()
+
+        self.pbar.close()
+        print("Download finished.")
+        
 
     # Determine which .torrent files to download
     def __filter_torrents(self, movie):
@@ -155,48 +160,53 @@ class Scraper:
         if torrents == None:
             tqdm.write("Could not find any torrents for " + movie_name + ". Skipping...")
             return
+
+        bin_content_img = (requests.get(movie['large_cover_image'])).content if self.poster else None
         
         # Iterate through available torrent files
         for torrent in torrents:
             quality = torrent['quality']
             if self.categorize and self.categorize != 'rating':
                 if self.quality == 'all' or self.quality == quality:
-                    bin_content = (requests.get(torrent['url'])).content
+                    bin_content_tor = (requests.get(torrent['url'])).content
                     
                     for genre in movie_genres:
                         path = self.__build_path(movie_name, movie_rating, quality, genre)
-                        is_download_successful = self.__download_file(bin_content, path, movie_name, movie_id)
+                        is_download_successful = self.__download_file(bin_content_tor, bin_content_img, path, movie_name, movie_id)
             else:
                 if self.quality == 'all' or self.quality == quality:
-                    bin_content = (requests.get(torrent['url'])).content
+                    bin_content_tor = (requests.get(torrent['url'])).content
                     path = self.__build_path(movie_name, movie_rating, quality, None)
-                    is_download_successful = self.__download_file(bin_content, path, movie_name, movie_id)
+                    is_download_successful = self.__download_file(bin_content_tor, bin_content_img, path, movie_name, movie_id)
             
             if is_download_successful and self.quality == 'all' or self.quality == quality:
                 tqdm.write("Downloaded " + movie_name + " " + quality.upper())
+                self.pbar.update()
 
 
     # Creates a file path for each download 
     def __build_path(self, movie_name, rating, quality, movie_genre):
         directory = self.directory
-
-        if self.categorize == 'rating':
-            os.makedirs((directory + '/' + str(math.trunc(rating))) + '+', exist_ok=True)
-            directory += ('/' + str(math.trunc(rating)) + '+')
-        elif self.categorize == 'genre':
-            os.makedirs((directory + '/' + str(movie_genre)), exist_ok=True)
-            directory += ('/' + str(movie_genre))
-        elif self.categorize == 'rating-genre':
-            os.makedirs((directory + '/' + str(math.trunc(rating)) + '+/' + movie_genre), exist_ok=True)
-            directory += ('/' + str(math.trunc(rating)) + '+/' + movie_genre)
-        elif self.categorize == 'genre-rating':
-            os.makedirs((directory + '/' + str(movie_genre) + '/' + str(math.trunc(rating))) + '+', exist_ok=True)
-            directory += ('/' + str(movie_genre) + '/' + str(math.trunc(rating)) + '+')
         
-        return os.path.join(directory, movie_name + ' ' + quality + '.torrent')
+        if self.categorize == 'rating':
+            directory += '/' + str(math.trunc(rating)) + '+'
+        elif self.categorize == 'genre':
+            directory += '/' + str(movie_genre)
+        elif self.categorize == 'rating-genre':
+            directory += '/' + str(math.trunc(rating)) + '+/' + movie_genre
+        elif self.categorize == 'genre-rating':
+            directory += '/' + str(movie_genre) + '/' + str(math.trunc(rating)) + '+'
+
+        if self.poster:
+            directory += '/' + movie_name
+
+        os.makedirs(directory, exist_ok=True)
+        
+        path = os.path.join(directory, movie_name + ' ' + quality)
+        return path
 
     # Write binary content to .torrent file
-    def __download_file(self, bin_content, path, movie_name, movie_id):
+    def __download_file(self, bin_content_tor, bin_content_img, path, movie_name, movie_id):
         if self.existing_file_counter > 10 and not self.skip_exit_condition:
             self.__prompt_existing_files()
 
@@ -205,10 +215,14 @@ class Scraper:
             self.existing_file_counter += 1
             return False
         else:
-            with open(path, 'wb') as f:
-                f.write(bin_content)
+            with open((path + '.torrent'), 'wb') as t:
+                t.write(bin_content_tor)
+            if self.poster:
+                with open((path + '.jpg'), 'wb') as t:
+                    t.write(bin_content_img)
+                
             self.downloaded_movie_ids.append(movie_id)
-            self.existing_file_counter = 0
+            self.existing_file_counter = 0 
             return True
     
     # Is triggered when the script hits 10 consecutive existing files
