@@ -7,6 +7,7 @@ import string
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from tqdm import tqdm
+from fake_useragent import UserAgent
 
 class Scraper:
     # Constructor
@@ -47,18 +48,22 @@ class Scraper:
         self.limit = 50
         
         # Formatted URL string
-        url = 'https://yts.am/api/v2/list_movies.json?quality={quality}&genre={genre}&minimum_rating={minimum_rating}&sort_by={sort_by}&order_by={order_by}&limit={limit}&page='.format(
+        url = 'https://yts.mx/api/v2/list_movies.json?quality={quality}&genre={genre}&minimum_rating={minimum_rating}&sort_by={sort_by}&order_by={order_by}&limit={limit}&page='.format(
             quality = self.quality, 
             genre = self.genre, 
             minimum_rating = self.minimum_rating, 
             sort_by = self.sort_by, 
             order_by = self.order_by, 
             limit = self.limit
-        ) 
-        
+        )
+
+        # Generate random user agent header
+        ua = UserAgent()
+        headers = {'User-Agent': ua.random}
+
         # Exception handling for connection errors
         try:
-            r = requests.get(url,timeout=5)
+            r = requests.get(url,timeout=5, verify=True, headers=headers)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             print("HTTP Error:",errh)
@@ -123,8 +128,11 @@ class Scraper:
             for page in range_:
                 url = self.url + str(page)
 
+                ua = UserAgent()
+                headers = {'User-Agent': ua.random}
+
                 # Send request to API
-                page_response = requests.get(url).json()
+                page_response = requests.get(url,timeout=5, verify=True, headers=headers).json()
                 
                 movies = page_response['data']['movies']
                 
@@ -132,7 +140,7 @@ class Scraper:
                 if not movies:
                     print("Could not find any movies on this page.\n")
 
-                # Wrap twdm around executor to update pbar with every process
+                # Wrap tqdm around executor to update pbar with every process
                 tqdm(executor.map(self.__filter_torrents, movies), total=self.movie_count, position=0, leave=True)       
                 
 
