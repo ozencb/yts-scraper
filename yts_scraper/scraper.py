@@ -41,6 +41,7 @@ class Scraper:
         self.page_arg = args.page
         self.poster = args.background
         self.imdb_id = args.imdb_id
+        self.multiprocess = args.multiprocess
 
     # Connect to API and extract initial data
     def __get_api_data(self):
@@ -109,9 +110,17 @@ class Scraper:
 
 
         print("Initializing download with these parameters:")
-        print("\t\nDirectory:\t%s\t\nQuality:\t%s\t\nMovie Genre:\t%s\t\nMinimum Rating:\t%s\t\nCategorization:\t%s\t\nStarting page:\t%s\n" % 
-            (self.directory, self.quality, self.genre, self.minimum_rating, self.categorize, self.page_arg))
-
+        print("\t\nDirectory:\t%s\t\nQuality:\t%s\t\nMovie Genre:\t%s\t\nMinimum Rating:\t%s\t\nCategorization:\t%s\t\nStarting page:\t%s\nMovie posters:\t%s\nAppend IMDb ID:\t%s\nMultiprocess:\t%s\n" % 
+            (self.directory,
+            self.quality,
+            self.genre,
+            self.minimum_rating,
+            self.categorize,
+            self.page_arg,
+            str(self.poster),
+            str(self.imdb_id),
+            str(self.multiprocess))
+            )
 
         if (self.movie_count <= 0):
             print("Could not find any movies with given parameters")
@@ -124,25 +133,30 @@ class Scraper:
         
         # Multiprocess executor
         # Setting max_workers to None makes executor utilize CPU number * 5 at most
-        with ThreadPoolExecutor(max_workers=None) as executor:
-            for page in range_:
-                url = self.url + str(page)
+        executor = ThreadPoolExecutor(max_workers=None)
+        
+        for page in range_:
+            url = self.url + str(page)
 
-                ua = UserAgent()
-                headers = {'User-Agent': ua.random}
+            ua = UserAgent()
+            headers = {'User-Agent': ua.random}
 
-                # Send request to API
-                page_response = requests.get(url,timeout=5, verify=True, headers=headers).json()
-                
-                movies = page_response['data']['movies']
-                
-                # Movies found on current page
-                if not movies:
-                    print("Could not find any movies on this page.\n")
+            # Send request to API
+            page_response = requests.get(url,timeout=5, verify=True, headers=headers).json()
+            
+            movies = page_response['data']['movies']
+            
+            # Movies found on current page
+            if not movies:
+                print("Could not find any movies on this page.\n")
 
+            if self.multiprocess:
                 # Wrap tqdm around executor to update pbar with every process
                 tqdm(executor.map(self.__filter_torrents, movies), total=self.movie_count, position=0, leave=True)       
-                
+            
+            else:
+                for movie in movies:
+                    self.__filter_torrents(movie)
 
         self.pbar.close()
         print("Download finished.")

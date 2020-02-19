@@ -31,18 +31,19 @@ For instance, running this command would download every 1080p sci-fi movie and t
 
 ## Options
 
-| Commands                          | Description                                                                                                                          |
-|-----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
-|`-h` or `--help`           |Prints help text. Also prints out all the available optional arguments.                                                                       |
-|`-o` or `--output`         |Output directory                                                                                                                              |
-|`-b` or `--background`     |Append "-b" to download movie posters. This will pack .torrent file and the image together in a folder.                                       |
-|`-i` or `--imdb-id`        |Append -i to append IMDb ID to filename.                                                                                                      |
-|`-q` or `--quality`        |Video quality. Available options are: "all", "720p", "1080p", "3d"                                                                            |
-|`-g` or `--genre`          |Movie genre. Available options are: "all", "action", "adventure", "animation", "biography", "comedy", "crime", "documentary", "drama", "family", "fantasy", "film-noir", "game-show", "history", "horror", "music", "musical", "mystery", "news", "reality-tv", "romance", "sci-fi", "sport", "talk-show", "thriller", "war", "western".                                              |
-|`-r` or `--rating`         |Minimum rating score. Enter an integer between 0 and 9.                                                                                       |
-|`-s` or `--sort-by`        |Download order. Available options are: "title", "year", "rating", "latest", "peers", "seeds", "download_count", "like_count", "date_added"    |
-|`-c` or `--categorize-by`  |Creates a folder structure. Available options are: "rating", "genre", "rating-genre", "genre-rating"                                          |
-|`-p` or `--page`           |Can be used to skip ahead an amount of pages.                                                                                                 |
+| Commands                          | Description                                                                                                                                                   |
+|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|`-h` or `--help`           |Prints help text. Also prints out all the available optional arguments.                                                                                                |
+|`-o` or `--output`         |Output directory                                                                                                                                                       |
+|`-b` or `--background`     |Append "-b" to download movie posters. This will pack .torrent file and the image together in a folder.                                                                |
+|`-m` or `--multiprocess`   |Append -m to download using multiprocessor. This option makes the process significantly faster but is prone to raising flags and causing server to deny requests.      |
+|`-i` or `--imdb-id`        |Append -i to append IMDb ID to filename.                                                                                                                               |
+|`-q` or `--quality`        |Video quality. Available options are: "all", "720p", "1080p", "3d"                                                                                                     |
+|`-g` or `--genre`          |Movie genre. Available options are: "all", "action", "adventure", "animation", "biography", "comedy", "crime", "documentary", "drama", "family", "fantasy", "film-noir", "game-show", "history", "horror", "music", "musical", "mystery", "news", "reality-tv", "romance", "sci-fi", "sport", "talk-show", "thriller", "war", "western".                                                                       |
+|`-r` or `--rating`         |Minimum rating score. Enter an integer between 0 and 9.                                                                                                                |
+|`-s` or `--sort-by`        |Download order. Available options are: "title", "year", "rating", "latest", "peers", "seeds", "download_count", "like_count", "date_added"                             |
+|`-c` or `--categorize-by`  |Creates a folder structure. Available options are: "rating", "genre", "rating-genre", "genre-rating"                                                                   |
+|`-p` or `--page`           |Can be used to skip ahead an amount of pages.                                                                                                                          |
 
 ## Disclaimer
 This is a proof of concept tool built mainly to practice programming.

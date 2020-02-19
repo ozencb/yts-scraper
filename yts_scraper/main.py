@@ -81,6 +81,14 @@ def main():
                         const=True,
                         nargs='?')
 
+    parser.add_argument('-m', '--multiprocess',
+                        help='Append -m to download using multiprocessor. This option makes the process significantly faster but is prone to raising flags and causing server to deny requests.',
+                        dest='multiprocess',
+                        type=bool,
+                        required=False,
+                        default=False,
+                        const=True,
+                        nargs='?')
 
     parser.add_argument('-p', '--page',
                         help='Enter an integer to skip ahead number of pages',
