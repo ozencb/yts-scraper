@@ -18,7 +18,7 @@ def main():
                         dest='quality',
                         type=str.lower,
                         required=False,
-                        choices=['all', '720p', '1080p', '3d'],
+                        choices=['all', '720p', '1080p', '2160p', '3d'],
                         default='1080p',
                         const='1080p',
                         nargs='?')
