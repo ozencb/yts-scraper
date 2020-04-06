@@ -32,7 +32,10 @@ class Scraper:
         if args.sort_by == 'latest':
             self.sort_by = 'date_added'
             self.order_by = 'desc'
-
+        else:
+            self.sort_by = args.sort_by
+            self.order_by = "asc"
+            
         self.directory = directory
         self.quality = '3D' if (args.quality == '3d') else args.quality # Check 3D arg casing 
         self.genre = args.genre
