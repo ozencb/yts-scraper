@@ -62,8 +62,11 @@ class Scraper:
         )
 
         # Generate random user agent header
-        ua = UserAgent()
-        headers = {'User-Agent': ua.random}
+        try:
+            ua = UserAgent()
+            headers = {'User-Agent': ua.random}
+        except:
+            print("Error occurred during fake user agent generation.")
 
         # Exception handling for connection errors
         try:
