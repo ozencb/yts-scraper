@@ -15,7 +15,6 @@ class Scraper:
         self.args = args
         return
 
-    
     # Argument validation
     def __validate_args(self):
         args = self.args
@@ -41,6 +40,7 @@ class Scraper:
         self.genre = args.genre
         self.minimum_rating = args.rating
         self.categorize = args.categorize_by
+        self.year_limit = args.year_limit
         self.page_arg = args.page
         self.poster = args.background
         self.imdb_id = args.imdb_id
@@ -116,12 +116,13 @@ class Scraper:
 
 
         print("Initializing download with these parameters:")
-        print("\t\nDirectory:\t%s\t\nQuality:\t%s\t\nMovie Genre:\t%s\t\nMinimum Rating:\t%s\t\nCategorization:\t%s\t\nStarting page:\t%s\nMovie posters:\t%s\nAppend IMDb ID:\t%s\nMultiprocess:\t%s\n" % 
+        print("\t\nDirectory:\t%s\t\nQuality:\t%s\t\nMovie Genre:\t%s\t\nMinimum Rating:\t%s\t\nCategorization:\t%s\t\nMinimum Year:\t%s\t\nStarting page:\t%s\nMovie posters:\t%s\nAppend IMDb ID:\t%s\nMultiprocess:\t%s\n" % 
             (self.directory,
             self.quality,
             self.genre,
             self.minimum_rating,
             self.categorize,
+            self.year_limit,
             self.page_arg,
             str(self.poster),
             str(self.imdb_id),
@@ -144,8 +145,12 @@ class Scraper:
         for page in range_:
             url = self.url + str(page)
 
-            ua = UserAgent()
-            headers = {'User-Agent': ua.random}
+            # Generate random user agent header
+            try:
+                ua = UserAgent()
+                headers = {'User-Agent': ua.random}
+            except:
+                print("Error occurred during fake user agent generation.")
 
             # Send request to API
             page_response = requests.get(url,timeout=5, verify=True, headers=headers).json()
@@ -174,6 +179,10 @@ class Scraper:
         movie_rating = movie['rating']
         movie_genres = movie['genres']
         imdb_id = movie['imdb_code']
+        year = movie['year']
+
+        if year < self.year_limit:
+            return
 
         # Every torrent option for current movie
         torrents = movie['torrents']

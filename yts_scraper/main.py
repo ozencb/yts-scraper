@@ -63,6 +63,15 @@ def main():
                         const='rating',
                         nargs='?')
 
+    parser.add_argument('-y', '--year-limit',
+                        help='Only downloads movies newer than given year.',
+                        dest='year_limit',
+                        type=int,
+                        required=False,
+                        default='0',
+                        const='0',
+                        nargs='?')
+
     parser.add_argument('-b', '--background',
                         help='Append -b to download movie posters. This will pack .torrent file and the image together in a folder.',
                         dest='background',
