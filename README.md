@@ -1,6 +1,6 @@
 [![GitHub Issues](https://img.shields.io/github/issues/Ozencb/yts-scraper)](https://github.com/Ozencb/yts-scraper/issues)
-[![Stars](https://img.shields.io/github/stars/Ozencb/yts-scraper)]()
-[![Forks](https://img.shields.io/github/forks/Ozencb/yts-scraper)]()
+[![Stars](https://img.shields.io/github/stars/Ozencb/yts-scraper)](https://github.com/Ozencb/yts-scraper)
+[![Forks](https://img.shields.io/github/forks/Ozencb/yts-scraper)](https://github.com/Ozencb/yts-scraper)
 [![MIT](https://img.shields.io/github/license/Ozencb/yts-scraper)](../master/LICENSE)
 
 # YTS Scraper
