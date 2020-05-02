@@ -2,6 +2,7 @@ import os
 import sys
 import math
 import json
+import csv
 from concurrent.futures.thread import ThreadPoolExecutor
 import requests
 from tqdm import tqdm
@@ -26,6 +27,7 @@ class Scraper:
         self.poster = args.background
         self.imdb_id = args.imdb_id
         self.multiprocess = args.multiprocess
+        self.csv_only = args.csv_only
 
         self.movie_count = None
         self.url = None
@@ -36,16 +38,18 @@ class Scraper:
 
 
         # Set output directory
-        if self.output:
-            os.makedirs(self.output, exist_ok=True)
+        if args.output:
+            if not args.csv_only:
+                os.makedirs(self.output, exist_ok=True)
             self.directory = os.path.join(os.path.curdir, self.output)
         else:
-            os.makedirs(self.categorize.title(), exist_ok=True)
+            if not args.csv_only:
+                os.makedirs(self.categorize.title(), exist_ok=True)
             self.directory = os.path.join(os.path.curdir, self.categorize.title())
 
 
         # Args for downloading in reverse chronological order
-        if self.sort_by == 'latest':
+        if args.sort_by == 'latest':
             self.sort_by = 'date_added'
             self.order_by = 'desc'
         else:
@@ -213,8 +217,11 @@ class Scraper:
         movie_id = str(movie['id'])
         movie_rating = movie['rating']
         movie_genres = movie['genres']
+        movie_name_short = movie['title']
         imdb_id = movie['imdb_code']
         year = movie['year']
+        language = movie['language']
+        yts_url = movie['url']
 
         if year < self.year_limit:
             return
@@ -240,6 +247,7 @@ class Scraper:
         # Iterate through available torrent files
         for torrent in torrents:
             quality = torrent['quality']
+            torrent_url = torrent['url']
             if self.categorize and self.categorize != 'rating':
                 if self.quality == 'all' or self.quality == quality:
                     bin_content_tor = (requests.get(torrent['url'])).content
@@ -249,7 +257,8 @@ class Scraper:
                         is_download_successful = self.__download_file(bin_content_tor, bin_content_img, path, movie_name, movie_id)
             else:
                 if self.quality == 'all' or self.quality == quality:
-                    bin_content_tor = (requests.get(torrent['url'])).content
+                    self.__log_csv(movie_id, movie_name_short, year, language, movie_rating, quality, yts_url, torrent_url)
+                    bin_content_tor = (requests.get(torrent_url)).content
                     path = self.__build_path(movie_name, movie_rating, quality, None, imdb_id)
                     is_download_successful = self.__download_file(bin_content_tor, bin_content_img, path, movie_name, movie_id)
 
@@ -260,6 +269,9 @@ class Scraper:
 
     # Creates a file path for each download
     def __build_path(self, movie_name, rating, quality, movie_genre, imdb_id):
+        if self.csv_only:
+            return
+
         directory = self.directory
 
         if self.categorize == 'rating':
@@ -286,6 +298,9 @@ class Scraper:
 
     # Write binary content to .torrent file
     def __download_file(self, bin_content_tor, bin_content_img, path, movie_name, movie_id):
+        if self.csv_only:
+            return
+
         if self.existing_file_counter > 10 and not self.skip_exit_condition:
             self.__prompt_existing_files()
 
@@ -303,6 +318,29 @@ class Scraper:
         self.downloaded_movie_ids.append(movie_id)
         self.existing_file_counter = 0
         return True
+
+    def __log_csv(self, id, name, year, language, rating, quality, yts_url, torrent_url):
+        path = os.path.join(os.path.curdir, 'YTS-Scraper.csv')
+        csv_exists = os.path.isfile(path)
+
+        with open(path, mode='a') as csv_file:
+            headers = ['YTS ID', 'Movie Title', 'Year', 'Language', 'Rating', 'Quality', 'YTS URL', 'Torrent URL']
+            writer = csv.DictWriter(csv_file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_ALL, fieldnames=headers)
+
+            if not csv_exists:
+                writer.writeheader()
+
+            writer.writerow({'YTS ID': id,
+                             'Movie Title': name,
+                             'Year': year,
+                             'Language': language,
+                             'Rating': rating,
+                             'Quality': quality,
+                             'YTS URL': yts_url,
+                             'Torrent URL': torrent_url
+                            })
+
+
 
     # Is triggered when the script hits 10 consecutive existing files
     def __prompt_existing_files(self):
