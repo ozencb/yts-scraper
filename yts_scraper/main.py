@@ -128,7 +128,8 @@ def main():
                         nargs='?')
 
     parser.add_argument('--csv-only',
-                        help='Append --csv-only to log scraped data ONLY to a CSV file. Torrent files will not be downloaded',
+                        help='''Append --csv-only to log scraped data ONLY to a CSV file.
+                                With this argument torrent files will not be downloaded''',
                         dest='csv_only',
                         type=bool,
                         required=False,
