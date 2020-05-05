@@ -63,21 +63,14 @@ class Scraper:
     # Connect to API and extract initial data
     def __get_api_data(self):
         # Formatted URL string
-        url = '''https://yts.mx/api/v2/list_movies.json?
-                 quality={quality}&
-                 genre={genre}&
-                 minimum_rating={minimum_rating}&
-                 sort_by={sort_by}&
-                 order_by={order_by}&
-                 limit={limit}&
-                 page='''.format(
-                     quality=self.quality,
-                     genre=self.genre,
-                     minimum_rating=self.minimum_rating,
-                     sort_by=self.sort_by,
-                     order_by=self.order_by,
-                     limit=self.limit
-                 )
+        url = '''https://yts.mx/api/v2/list_movies.json?quality={quality}&genre={genre}&minimum_rating={minimum_rating}&sort_by={sort_by}&order_by={order_by}&limit={limit}&page='''.format(
+            quality=self.quality,
+            genre=self.genre,
+            minimum_rating=self.minimum_rating,
+            sort_by=self.sort_by,
+            order_by=self.order_by,
+            limit=self.limit
+        )
 
         # Generate random user agent header
         try:
