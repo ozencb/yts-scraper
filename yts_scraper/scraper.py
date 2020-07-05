@@ -105,9 +105,9 @@ class Scraper:
 
         # Adjust movie count according to starting page
         if self.page_arg == 1:
-            movie_count = data['data']['movie_count']
+            movie_count = data.get('data').get('movie_count')
         else:
-            movie_count = (data['data']['movie_count']) - ((self.page_arg - 1) * self.limit)
+            movie_count = (data.get('data').get('movie_count')) - ((self.page_arg - 1) * self.limit)
 
         self.movie_count = movie_count
         self.url = url
@@ -182,7 +182,7 @@ class Scraper:
             # Send request to API
             page_response = requests.get(url, timeout=5, verify=True, headers=headers).json()
 
-            movies = page_response['data']['movies']
+            movies = page_response.get('data').get('movies')
 
             # Movies found on current page
             if not movies:
@@ -207,22 +207,24 @@ class Scraper:
 
     # Determine which .torrent files to download
     def __filter_torrents(self, movie):
-        movie_id = str(movie['id'])
-        movie_rating = movie['rating']
-        movie_genres = movie['genres']
-        movie_name_short = movie['title']
-        imdb_id = movie['imdb_code']
-        year = movie['year']
-        language = movie['language']
-        yts_url = movie['url']
+        movie_id = str(movie.get('id'))
+        movie_rating = movie.get('rating')
+        movie_genres = movie.get('genres') if movie.get('genres') else ['None']
+        movie_name_short = movie.get('title')
+        imdb_id = movie.get('imdb_code')
+        year = movie.get('year')
+        language = movie.get('language')
+        yts_url = movie.get('url')
 
         if year < self.year_limit:
             return
 
+
+
         # Every torrent option for current movie
-        torrents = movie['torrents']
+        torrents = movie.get('torrents')
         # Remove illegal file/directory characters
-        movie_name = movie['title_long'].translate({ord(i):None for i in "'/\:*?<>|"})
+        movie_name = movie.get('title_long').translate({ord(i):None for i in "'/\:*?<>|"})
 
         # Used to multiple download messages for multi-folder categorization
         is_download_successful = False
@@ -235,15 +237,15 @@ class Scraper:
             tqdm.write('Could not find any torrents for {}. Skipping...'.format(movie_name))
             return
 
-        bin_content_img = (requests.get(movie['large_cover_image'])).content if self.poster else None
+        bin_content_img = (requests.get(movie.get('large_cover_image'))).content if self.poster else None
 
         # Iterate through available torrent files
         for torrent in torrents:
-            quality = torrent['quality']
-            torrent_url = torrent['url']
+            quality = torrent.get('quality')
+            torrent_url = torrent.get('url')
             if self.categorize and self.categorize != 'rating':
                 if self.quality == 'all' or self.quality == quality:
-                    bin_content_tor = (requests.get(torrent['url'])).content
+                    bin_content_tor = (requests.get(torrent.get('url'))).content
 
                     for genre in movie_genres:
                         path = self.__build_path(movie_name, movie_rating, quality, genre, imdb_id)
