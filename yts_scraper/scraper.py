@@ -252,7 +252,7 @@ class Scraper:
                         is_download_successful = self.__download_file(bin_content_tor, bin_content_img, path, movie_name, movie_id)
             else:
                 if self.quality == 'all' or self.quality == quality:
-                    self.__log_csv(movie_id, movie_name_short, year, language, movie_rating, quality, yts_url, torrent_url)
+                    self.__log_csv(movie_id, imdb_id, movie_name_short, year, language, movie_rating, quality, yts_url, torrent_url)
                     bin_content_tor = (requests.get(torrent_url)).content
                     path = self.__build_path(movie_name, movie_rating, quality, None, imdb_id)
                     is_download_successful = self.__download_file(bin_content_tor, bin_content_img, path, movie_name, movie_id)
@@ -314,24 +314,26 @@ class Scraper:
         self.existing_file_counter = 0
         return True
 
-    def __log_csv(self, id, name, year, language, rating, quality, yts_url, torrent_url):
+    def __log_csv(self, id, imdb_id, name, year, language, rating, quality, yts_url, torrent_url):
         path = os.path.join(os.path.curdir, 'YTS-Scraper.csv')
         csv_exists = os.path.isfile(path)
 
         with open(path, mode='a') as csv_file:
-            headers = ['YTS ID', 'Movie Title', 'Year', 'Language', 'Rating', 'Quality', 'YTS URL', 'Torrent URL']
+            headers = ['YTS ID', 'IMDb ID', 'Movie Title', 'Year', 'Language', 'Rating', 'Quality', 'YTS URL', 'IMDb URL', 'Torrent URL']
             writer = csv.DictWriter(csv_file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_ALL, fieldnames=headers)
 
             if not csv_exists:
                 writer.writeheader()
 
             writer.writerow({'YTS ID': id,
+                             'IMDb ID': imdb_id,
                              'Movie Title': name,
                              'Year': year,
                              'Language': language,
                              'Rating': rating,
                              'Quality': quality,
                              'YTS URL': yts_url,
+                             'IMDb URL': 'https://www.imdb.com/title/' + imdb_id,
                              'Torrent URL': torrent_url
                             })
 
