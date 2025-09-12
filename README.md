@@ -1,3 +1,14 @@
+⚠️ Project Status: No Longer Maintained ⚠️
+
+This project is no longer actively maintained.
+Issues and pull requests will not be reviewed, and no further updates are planned.
+
+You are welcome to fork the repository and continue development independently.
+
+Thank you to everyone who has used, contributed to, or supported this project.
+
+---
+
 [![GitHub Issues](https://img.shields.io/github/issues/Ozencb/yts-scraper)](https://github.com/Ozencb/yts-scraper/issues)
 [![Stars](https://img.shields.io/github/stars/Ozencb/yts-scraper)](https://github.com/Ozencb/yts-scraper)
 [![Forks](https://img.shields.io/github/forks/Ozencb/yts-scraper)](https://github.com/Ozencb/yts-scraper)
